@@ -148,7 +148,8 @@ def duplicateCapsule(capsule,xmirror=False,ymirror=False,zmirror=False):
     co1,r1,i1,co2,r2,i2 = capsuleData(capsule)
     mirror = lambda x: x.reflect(Vector([xmirror,ymirror,zmirror]))
     co1, co2 = mirror(co1),mirror(co2)
-    createCapsule(i1,i2,r1,r2,co1,co2,)
+    capsule2 = createCapsule(i1,i2,r1,r2,co1,co2,)
+    capsule2["Data"] = capsule["Data"]
 
 class CCLTools(bpy.types.Panel):
     bl_idname = "panel.mhw_physics"
