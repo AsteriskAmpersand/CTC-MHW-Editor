@@ -21,7 +21,7 @@ import bpy
 from .operators.ctcimport import ImportCTC
 from .operators.cclimport import ImportCCL
 from .operators.cclexport import ExportCCL
-from .operators.ccltools import MeshFromCapsule,CapsuleFromSelection
+from .operators.ccltools import MeshFromCapsule,CapsuleFromSelection,DuplicateCapsule
 from .operators.ccltools import CopyCCLData, PasteCCLData
 from .operators.ccltools import CCLTools
                                  
@@ -32,7 +32,7 @@ from .operators.cclexport import menu_func_export as ccl_export
 
 
 classes = [ImportCTC,ImportCCL,ExportCCL,
-           MeshFromCapsule,CapsuleFromSelection,
+           MeshFromCapsule,CapsuleFromSelection,DuplicateCapsule,
            CopyCCLData, PasteCCLData,
            CCLTools]
 importFunctions = [ctc_import,ccl_import] 

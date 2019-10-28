@@ -144,6 +144,12 @@ def createCapsule(f1,f2,r1,r2,co1=Vector([0,0,0]),co2=Vector([0,0,0])):
     s["Data"] = [0]*8+[0]*4
     return s
 
+def duplicateCapsule(capsule,xmirror=False,ymirror=False,zmirror=False):
+    co1,r1,i1,co2,r2,i2 = capsuleData(capsule)
+    mirror = lambda x: x.reflect(Vector([xmirror,ymirror,zmirror]))
+    co1, co2 = mirror(co1),mirror(co2)
+    createCapsule(i1,i2,r1,r2,co1,co2,)
+
 class CCLTools(bpy.types.Panel):
     bl_idname = "panel.mhw_physics"
     bl_label = "CCL Tools"
@@ -156,6 +162,7 @@ class CCLTools(bpy.types.Panel):
         self.layout.label("CCL Capsule Tools")
         self.layout.operator("ccl_tools.mesh_from_capsule", icon='MESH_CUBE', text="Mesh from Capsule")
         self.layout.operator("ccl_tools.capsule_from_selection", text="Capsule from Selection")
+        self.layout.operator('ccl_tools.duplicate_capsule', text="Duplicate Capsule")
         self.layout.label("CCL Data Tools")
         self.layout.operator('ccl_tools.copy_data', text="Copy Unknowns")
         self.layout.operator('ccl_tools.paste_data', text="Paste Unknowns")
@@ -194,7 +201,27 @@ class MeshFromCapsule(bpy.types.Operator):
             raise ValueError ("Corrupted capsule doesn't have exactly 2 empty CCL_SPHERE")
         renderCapsules(capsule)
         return {"FINISHED"}
-    
+
+class DuplicateCapsule(bpy.types.Operator):    
+    bl_idname = 'ccl_tools.duplicate_capsule'
+    bl_label = 'Duplicate Capsule'
+    bl_options = {"REGISTER", "UNDO"}
+    xmirror = BoolProperty(name = "Mirror X Axis.",
+        description = "Mirrors along the axis",
+        default = False)
+    ymirror = BoolProperty(name = "Mirror Y Axis.",
+        description = "Mirrors along the axis",
+        default = False)
+    zmirror = BoolProperty(name = "Mirror Z Axis.",
+        description = "Mirrors along the axis",
+        default = False)
+    def execute(self,context):
+        capsule = bpy.context.scene.objects.active
+        if capsule.type != "EMPTY" or "Type" not in capsule or capsule["Type"] != "CCL":
+            raise ValueError("Not a ccl capsule")
+        duplicateCapsule(capsule,self.xmirror,self.ymirror,self.zmirror)
+        return {"FINISHED"}
+
 copyBuffer = None
 class CopyCCLData(bpy.types.Operator):    
     bl_idname = 'ccl_tools.copy_data'

@@ -56,8 +56,6 @@ class ExportCCL(Operator, ExportHelper):
         return sorted([obj for obj in bpy.context.scene.objects 
                 if "Type" in obj and obj["Type"] == "CCL"],key = lambda x: x.name)
 
-    @staticmethod
-
     def capsuleToRecord(self, capsule):
         data = {}
         offset_matrix1, offset_matrix2 = ExportCCL.getCapsuleMatrices(capsule)
