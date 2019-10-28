@@ -6,10 +6,11 @@ Created on Wed Oct 23 11:43:04 2019
 """
 import bpy
 from bpy_extras.io_utils import ExportHelper
-from bpy.props import StringProperty, BoolProperty, EnumProperty
+from bpy.props import StringProperty, BoolProperty, EnumProperty, FloatProperty
 from bpy.types import Operator
 from mathutils import Vector, Matrix
 from ..structures.Ccl import CCLRecords, CCL
+from ..operators.ccltools import getCol
 
 class ExportCCL(Operator, ExportHelper):
     bl_idname = "custom_export.export_mhw_ccl"
@@ -19,6 +20,11 @@ class ExportCCL(Operator, ExportHelper):
     # ImportHelper mixin class uses this
     filename_ext = ".ccl"
     filter_glob = StringProperty(default="*.ccl", options={'HIDDEN'}, maxlen=255)
+    
+    scale = FloatProperty(
+        name = "Divide sphere radius." ,
+        description = "Divide sphere radii when writing back to file (Factor of 2 according to Statyk)",
+        default = 1.0)        
     
     def execute(self,context):
         try:
@@ -51,25 +57,22 @@ class ExportCCL(Operator, ExportHelper):
                 if "Type" in obj and obj["Type"] == "CCL"],key = lambda x: x.name)
 
     @staticmethod
-    def getRow(matrix, column):
-        return [matrix[i][column] for i in range(len(matrix))]
 
-    @staticmethod
-    def capsuleToRecord(capsule):
+    def capsuleToRecord(self, capsule):
         data = {}
         offset_matrix1, offset_matrix2 = ExportCCL.getCapsuleMatrices(capsule)
         id1, id2 = ExportCCL.getCapsuleID(capsule)
-        trans1 = ExportCCL.getRow(offset_matrix1,3)
+        trans1 = getCol(offset_matrix1,3)
         scale1 = offset_matrix1[0][0]
-        trans2 = ExportCCL.getRow(offset_matrix2,3)
+        trans2 = getCol(offset_matrix2,3)
         scale2 = offset_matrix2[0][0]
         data["boneIDOne"] = id1
         data["boneIDTwo"] = id2
         data["unknownBytes"] = capsule["Data"]
         data["startsphere"] = trans1
         data["endsphere"] = trans2
-        data["startsphere_radius"] = scale1
-        data["endsphere_radius"] = scale2
+        data["startsphere_radius"] = scale1/self.scale
+        data["endsphere_radius"] = scale2/self.scale
         return CCLRecords().construct(data)
     
     @staticmethod

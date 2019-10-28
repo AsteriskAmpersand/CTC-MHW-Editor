@@ -9,6 +9,7 @@ from collections import OrderedDict
 try:
     import mathutils as np
     Matrix = np.Matrix
+    Vector = np.Vector
     from ..common.Cstruct import PyCStruct, FileClass
 except:
     import sys
@@ -16,6 +17,7 @@ except:
     from Cstruct import PyCStruct, FileClass
     import numpy as np
     Matrix = np.matrix
+    Vector = lambda x: np.matrix(x).transpose()
 
 class Header(PyCStruct):
 	fields = OrderedDict([
@@ -73,11 +75,11 @@ class BRecord(PyCStruct):
 	("unknFloat2","float"),
 	("unknFloat3","float"),
 	("unknFloat4","float"),
-	("unknownByteSetOne","byte[2]"),
+	("zeroSet1","byte[2]"),
 	("isChainParent","byte"),
 	("unknownByteSetTwo","byte[5]"),
 	("boneFunctionID","int"),
-	("unknownByteSetThree","byte[4]"),
+	("zeroSet3","byte[4]"),
 	("unknownFloatSet","float[4]"),])
     
     def marshall(self, data):
@@ -87,6 +89,7 @@ class BRecord(PyCStruct):
         [self.zMax,self.yMax,self.xMax,self.worldY],
         [self.xSomething,self.ySomething,self.zSomething,self.worldZ],
         [self.unknFloat1,self.unknFloat2,self.unknFloat3,self.unknFloat4]]).transpose()
+        self.Vector = Vector(self.unknownFloatSet)
         return self
         
 #} brecord [ header.numBRecords ] }}
@@ -114,12 +117,14 @@ class Ctc():
         return iter(self.Chains)
 CtcFile = FileClass(Ctc)
 
+def norm(v):
+    return np.sqrt(v[0]**2+v[1]**2+v[2]**2)
 
 from pathlib import Path
 if __name__ == "__main__":
+    ws = [set() for i in range(4)]
     for ctcf in Path(r"E:\MHW\Merged").rglob("*.ctc"):
         ctc = CtcFile(ctcf).data
         for chain in ctc:
             for node in chain:
-                #print(node.Matrix)
-                print(node.Matrix[3])
+                print(norm(node.Matrix*node.Vector))

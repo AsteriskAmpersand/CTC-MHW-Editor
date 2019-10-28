@@ -21,25 +21,38 @@ import bpy
 from .operators.ctcimport import ImportCTC
 from .operators.cclimport import ImportCCL
 from .operators.cclexport import ExportCCL
+from .operators.ccltools import MeshFromCapsule,CapsuleFromSelection
+from .operators.ccltools import CopyCCLData, PasteCCLData
+from .operators.ccltools import CCLTools
+                                 
+
 from .operators.ctcimport import menu_func_import as ctc_import
 from .operators.cclimport import menu_func_import as ccl_import
 from .operators.cclexport import menu_func_export as ccl_export
 
+
+classes = [ImportCTC,ImportCCL,ExportCCL,
+           MeshFromCapsule,CapsuleFromSelection,
+           CopyCCLData, PasteCCLData,
+           CCLTools]
+importFunctions = [ctc_import,ccl_import] 
+exportFunctions = [ccl_export] 
+
 def register():
-    bpy.utils.register_class(ImportCTC)
-    bpy.types.INFO_MT_file_import.append(ctc_import)
-    bpy.utils.register_class(ImportCCL)
-    bpy.types.INFO_MT_file_import.append(ccl_import)
-    bpy.utils.register_class(ExportCCL)
-    bpy.types.INFO_MT_file_export.append(ccl_export)
+    for cl in classes:
+        bpy.utils.register_class(cl)
+    for iF in importFunctions:
+        bpy.types.INFO_MT_file_import.append(iF)
+    for iF in exportFunctions:
+        bpy.types.INFO_MT_file_export.append(iF)
     
 def unregister():
-    bpy.utils.unregister_class(ImportCTC)
-    bpy.types.INFO_MT_file_import.remove(ctc_import)
-    bpy.utils.unregister_class(ImportCCL)
-    bpy.types.INFO_MT_file_import.remove(ccl_import)
-    bpy.utils.unregister_class(ExportCCL)
-    bpy.types.INFO_MT_file_export.remove(ccl_export)
+    for cl in classes:
+        bpy.utils.unregister_class(cl)
+    for iF in importFunctions:
+        bpy.types.INFO_MT_file_import.remove(iF)
+    for iF in exportFunctions:
+        bpy.types.INFO_MT_file_export.remove(iF)   
     
 if __name__ == "__main__":
     try:
