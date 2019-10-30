@@ -35,7 +35,7 @@ class Header(PyCStruct):
 	("windMultLow","float"),
 	("windMultHigh","float"),
 	("unknownFloatSet","float[3]"),
-	("unknownByteSet","byte[8]"),])
+	("fixedBytes","byte[8]"),])#1 1 1 1 1 1 0 0
 #} header 
 
 class ARecord(PyCStruct):
@@ -43,38 +43,42 @@ class ARecord(PyCStruct):
 	("chainLength","int"),
 	("collision","byte"),
 	("weightiness","byte"),
-	("unknownByteSet","byte[26]"),
+	("unknownByteSet","byte[2]"),
+   ("fixedNegativeOne","byte[4]"),
+   ("oneZeroZeroZero1","byte[4]"),
+   ("oneZeroZeroZero2","byte[4]"),
+   ("unknownByteSetCont","byte[12]"),
 	("xGravity","float"),
 	("yGravity","float"),
 	("zGravity","float"),
-	("unknownFloatOne","float"),
+	("zeroFloat","float"),
 	("xInertia","float"),
 	("yInertia","float"),
 	("zInertia","float"),
-	("unknownFloatTwo","float"),
-	("unknownFloatThree","float"),
-	("unknownFloatFour","float"),
+	("unknownFloatTwo","float"),#100
+	("unknownFloatThree","float"),#0
+	("unknownFloatFour","float"),#0.1
 	("windMultiplier","float"),
 	("lod","int"),])
 #} arecord [ header.numARecords ] 
 class BRecord(PyCStruct):
     fields = OrderedDict([
-	("negXMax","float"),
-	("negYMax","float"),
-	("negZMax","float"),
-	("worldX","float"),
-	("zMax","float"),
-	("yMax","float"),
-	("xMax","float"),
-	("worldY","float"),
-	("xSomething","float"),
-	("ySomething","float"),
-	("zSomething","float"),
-	("worldZ","float"),
-	("unknFloat1","float"),
-	("unknFloat2","float"),
-	("unknFloat3","float"),
-	("unknFloat4","float"),
+	("m00","float"),
+	("m10","float"),
+	("m20","float"),
+	("m30","float"),
+	("m01","float"),
+	("m11","float"),
+	("m21","float"),
+	("m31","float"),
+	("m02","float"),
+	("m12","float"),
+	("m22","float"),
+	("m32","float"),
+	("m03","float"),
+	("m13","float"),
+	("m23","float"),
+	("m33","float"),
 	("zeroSet1","byte[2]"),
 	("isChainParent","byte"),
 	("unknownByteSetTwo","byte[5]"),
@@ -85,10 +89,11 @@ class BRecord(PyCStruct):
     def marshall(self, data):
         super().marshall(data)
         self.Matrix = Matrix(        
-        [[self.negXMax, self.negYMax, self.negZMax, self.worldX],
-        [self.zMax,self.yMax,self.xMax,self.worldY],
-        [self.xSomething,self.ySomething,self.zSomething,self.worldZ],
-        [self.unknFloat1,self.unknFloat2,self.unknFloat3,self.unknFloat4]]).transpose()
+        [[self.m00, self.m01, self.m02, self.m03],
+         [self.m10, self.m11, self.m12, self.m13],
+         [self.m20, self.m21, self.m22, self.m23],
+         [self.m30, self.m31, self.m23, self.m33],
+         ])
         self.Vector = Vector(self.unknownFloatSet)
         return self
         
@@ -120,11 +125,59 @@ CtcFile = FileClass(Ctc)
 def norm(v):
     return np.sqrt(v[0]**2+v[1]**2+v[2]**2)
 
-from pathlib import Path
+def ifAdd(dictionary, key, data):
+    if key in dictionary:
+        dictionary[key].append(data)
+    else:
+        dictionary[key]=[data]
+    return dictionary
+
 if __name__ == "__main__":
-    ws = [set() for i in range(4)]
+    from pathlib import Path
     for ctcf in Path(r"E:\MHW\Merged").rglob("*.ctc"):
         ctc = CtcFile(ctcf).data
         for chain in ctc:
-            for node in chain:
-                print(norm(node.Matrix*node.Vector))
+            c = chain.chain
+
+
+    """
+    uci = set()
+    ui = set()
+    ufs = [set() for _ in range(3)]
+    ubs = [set() for _ in range(8)]
+    
+    ws = [set() for i in range(2)]
+    ws2 = [set() for i in range(12)]
+    centi = {}
+    zero = {}
+    uno = {}
+    
+        uci.add(tuple(ctc.Header.unknownsConstantIntSet))
+        ui.add(ctc.Header.unknownConstantInt)
+        for v,s in zip(ctc.Header.unknownFloatSet,ufs):
+            s.add(v)
+        for v,s in zip(ctc.Header.unknownByteSet,ubs):
+            s.add(v)
+            ifAdd(centi, chain.chain.unknownFloatTwo, ctcf.relative_to("E:\MHW\Merged").as_posix())
+            ifAdd(zero, chain.chain.unknownFloatThree, ctcf.relative_to("E:\MHW\Merged").as_posix())
+            ifAdd(uno, chain.chain.unknownFloatFour, ctcf.relative_to("E:\MHW\Merged").as_posix())
+            for byte, container in zip(chain.chain.unknownByteSet,ws):
+                container.add(byte)
+            for byte, container in zip(chain.chain.unknownByteSetCont,ws2):
+                container.add(byte)   
+    outputroot = Path(r"G:\Wisdom\DataOutputs")
+    with outputroot.joinpath("centi.csv").open("w") as fil:
+        json.dump(centi,fil)
+    with outputroot.joinpath("zero.csv").open("w") as fil:
+        json.dump(zero,fil)
+    with outputroot.joinpath("uno.csv").open("w") as fil:
+        json.dump(uno,fil)
+    for entry in ws:
+        print(entry)
+    for entry in ws2:
+        print(entry)
+    print(uci)
+    print(ui)
+    print(ufs)
+    print(ubs)
+    """

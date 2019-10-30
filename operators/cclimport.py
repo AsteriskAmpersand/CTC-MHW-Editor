@@ -27,17 +27,6 @@ class ImportCCL(Operator, ImportHelper):
         name = "Multiply sphere radius" ,
         description = "Multiply sphere radii (Factor of 2 according to Statyk)",
         default = 1.0)    
-    
-    """
-    
-    clear_scene = BoolProperty(
-        name = "Clear scene before import.",
-        description = "Clears all contents before importing",
-        default = True)
-    maximize_clipping = BoolProperty(
-        name = "Maximizes clipping distance.",
-        description = "Maximizes clipping distance to be able to see all of the model at once.",
-        default = True)"""
 
     def execute(self,context):
         try:
