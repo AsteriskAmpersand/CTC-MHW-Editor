@@ -21,6 +21,11 @@ class ImportCTC(Operator, ImportHelper):
     filename_ext = ".ctc"
     filter_glob = StringProperty(default="*.ctc", options={'HIDDEN'}, maxlen=255)
     
+    scale = BoolProperty(
+        name = "Delete Incomplete Chains" ,
+        description = "Delete nodes with missing bone functions.",
+        default = False)    
+    
     @staticmethod
     def breakHeader(header):
         return (header.unknownsConstantIntSet,
@@ -60,13 +65,16 @@ class ImportCTC(Operator, ImportHelper):
         mod = o.constraints.new(type = "CHILD_OF")#name= "Bone Function"
         mod.name = "Bone Function"
         mod.target = rootco
-        mod.inverse_matrix = node.matrix #experiment into the meaning of the matrix
+        #mod.inverse_matrix = node.matrix #experiment into the meaning of the matrix
+        o["Type"] = "CTC_Node"
         o.empty_draw_size = .5
         o.empty_draw_type = "SPHERE"
+        o.show_x_ray = True
         o.show_bounds = False
         for i in range(5):
-            o["UnknownByte%d"%i] = node.unknownByteSetTwo[i]
-        o["UnknownVector"] = node.Vector        
+            o["UnknownByte%02d"%i] = node.unknownByteSetTwo[i]
+        o["Vector"] = node.Vector
+        o["Matrix"] = node.Matrix
         result = o
         return result
 
@@ -77,6 +85,10 @@ class ImportCTC(Operator, ImportHelper):
         for node in chain:
             node = ImportCTC.createRecordNode(node)
             node.parent = parent
+            bpy.context.scene.update()
+            node.constraints["Bone Function"].inverse_matrix = parent.matrix_world.inverted()
+            parent = node
+        return chainmeta
         
     def execute(self,context):
         try:
@@ -86,11 +98,10 @@ class ImportCTC(Operator, ImportHelper):
         bpy.ops.object.select_all(action='DESELECT')
         ctc = CtcFile(self.properties.filepath).data
         header = ctc.Header
-        ucis,uci,ticks,pose,damp,react,grav,windM,windL,windH,ufs = self.breakHeader(header)
-        ctchead = createCTCHeader(ucis,uci,ticks,pose,damp,react,grav,windM,windL,windH,ufs)
+        ctchead = createCTCHeader(*self.breakHeader(header))
         for chain in ctc:
             ctcchain = self.createRecordChain(chain)
-            ctcchain.parent = ctchead            
+            ctcchain.parent = ctchead
         return {'FINISHED'}
     
     

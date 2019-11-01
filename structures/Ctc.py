@@ -20,7 +20,7 @@ except:
     Vector = lambda x: np.matrix(x).transpose()
 
 class Header(PyCStruct):
-	fields = OrderedDict([
+    fields = OrderedDict([
 	("filetype","char[4]"),
 	("unknownsConstantIntSet","int[3]"),
 	("numARecords","int"),
@@ -36,10 +36,16 @@ class Header(PyCStruct):
 	("windMultHigh","float"),
 	("unknownFloatSet","float[3]"),
 	("fixedBytes","byte[8]"),])#1 1 1 1 1 1 0 0
+    
+    def construct(self,data):
+        data["filetype"]="CTC\x00"
+        data["fixedBytes"]=[1,1,1,1,1,1,0,0]
+        super().construct(data)
+        return self
 #} header 
 
 class ARecord(PyCStruct):
-	fields = OrderedDict([
+    fields = OrderedDict([
 	("chainLength","int"),
 	("collision","byte"),
 	("weightiness","byte"),
@@ -60,6 +66,14 @@ class ARecord(PyCStruct):
 	("unknownFloatFour","float"),#0.1
 	("windMultiplier","float"),
 	("lod","int"),])
+    
+    def construct(self,data):
+        data["oneZeroZeroZero1"] = [1,0,0,0]
+        data["oneZeroZeroZero2"] = [1,0,0,0]
+        data["fixedNegativeOne"] = [-1]*4
+        data["zeroFloat"] = 0.0
+        super().construct(data)
+        return self
 #} arecord [ header.numARecords ] 
 class BRecord(PyCStruct):
     fields = OrderedDict([
@@ -96,7 +110,15 @@ class BRecord(PyCStruct):
          ])
         self.Vector = Vector(self.unknownFloatSet)
         return self
-        
+    
+    def construct(self, data):
+        for i,j in [(i,j) for i in range(4) for j in range(4)]:
+            data["m%d%d"%(i,j)] = data["Matrix"][i][j]
+        data["unknownFloatSet"] = list(data["Vector"])
+        data["zeroSet1"] = [0,0]
+        data["zeroSet3"] = [0,0,0,0] 
+        super().construct(data)
+        return self
 #} brecord [ header.numBRecords ] }}
     
 class CtcChain():
@@ -113,27 +135,41 @@ class CtcChain():
 class Ctc():
     def marshall(self,data):
         self.Header = Header().marshall(data)
-        arecords = [ARecord().marshall(data) for _ in range(self.Header.numARecords)]
-        brecords = [BRecord().marshall(data) for _ in range(self.Header.numBRecords)]
-        biter = iter(brecords)
-        self.Chains = [CtcChain(chain,biter) for chain in arecords]
+        self.arecords = [ARecord().marshall(data) for _ in range(self.Header.numARecords)]
+        self.brecords = [BRecord().marshall(data) for _ in range(self.Header.numBRecords)]
+        biter = iter(self.brecords)
+        self.Chains = [CtcChain(chain,biter) for chain in self.arecords]
         return self
+    def construct(self,header,chains,nodes):
+        self.Header = header
+        self.arecords = chains
+        self.brecords = nodes
+        return self
+    def serialize(self):
+        for arecord in self.arecords:
+            for field in ARecord.fields:
+                print("%s: %s"%(field, str(arecord.__getattribute__(field))))
+            print()
+        return self.Header.serialize()+ \
+                    b''.join([arecord.serialize() for arecord in self.arecords])+ \
+                    b''.join([brecord.serialize() for brecord in self.brecords])
     def __iter__(self):
         return iter(self.Chains)
 CtcFile = FileClass(Ctc)
 
-def norm(v):
-    return np.sqrt(v[0]**2+v[1]**2+v[2]**2)
-
-def ifAdd(dictionary, key, data):
-    if key in dictionary:
-        dictionary[key].append(data)
-    else:
-        dictionary[key]=[data]
-    return dictionary
-
 if __name__ == "__main__":
     from pathlib import Path
+    
+    def norm(v):
+        return np.sqrt(v[0]**2+v[1]**2+v[2]**2)
+
+    def ifAdd(dictionary, key, data):
+        if key in dictionary:
+            dictionary[key].append(data)
+        else:
+            dictionary[key]=[data]
+        return dictionary
+    
     for ctcf in Path(r"E:\MHW\Merged").rglob("*.ctc"):
         ctc = CtcFile(ctcf).data
         for chain in ctc:

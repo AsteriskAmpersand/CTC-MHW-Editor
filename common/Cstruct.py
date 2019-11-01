@@ -157,7 +157,10 @@ class Cstruct():
         return {varName:typeOperator['deserializer'](data.read(typeOperator['size'])) for varName, typeOperator in self.struct.items()}
     
     def serialize(self, data):
-        return b''.join([typeOperator['serializer'](data[varName]) for varName, typeOperator in self.struct.items()])
+        def test(key,x):
+            print("%s: %s"%(key,x))
+            return True
+        return b''.join([typeOperator['serializer'](data[varName]) for varName, typeOperator in self.struct.items() if test(varName,data[varName])])
 
 class RegisteredClass(type):
     def __new__(cls, clsname, superclasses, attributedict):

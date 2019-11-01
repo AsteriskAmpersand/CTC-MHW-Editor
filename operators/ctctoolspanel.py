@@ -73,5 +73,7 @@ class CTCTools(bpy.types.Panel):
         self.layout.operator("ctc_tools.chain_from_selection", icon='CONSTRAINT_DATA', text="Chain from Selection")
         self.layout.operator("ctc_tools.extend_chain", icon='CONSTRAINT_DATA', text="Extend Chain")
         self.layout.operator("ctc_tools.change_target", icon='CONSTRAINT_DATA', text="Change Target")
+        self.layout.operator("ctc_tools.realign_chain", icon='CONSTRAINT_DATA', text="Reparent Chain")  
+        self.layout.operator("ctc_tools.realign_chain", icon='CONSTRAINT_DATA', text="Reroot Chain")  
         self.layout.operator("ctc_tools.realign_chain", icon='MOD_MESHDEFORM', text="Realign Chains with Target")
-        self.layout.operator("ctc_tools.realign_chain", icon='MOD_MESHDEFORM', text="Reparent Chain")        
+        self.layout.operator("ctc_tools.find_duplicates", icon='MOD_MESHDEFORM', text="Find Duplicate IDs")  
