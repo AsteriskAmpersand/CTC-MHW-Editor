@@ -12,6 +12,7 @@ from bpy.types import Operator
 from mathutils import Vector, Matrix
 from ..structures.Ctc import Ctc,Header,ARecord,BRecord
 from ..operators.ccltools import getCol
+from ..operators.ctctools import checkIsChain, checkIsNode, checkIsChainStart, checkIsCTC
 
 class ExportCTC(Operator, ExportHelper):
     bl_idname = "custom_export.export_mhw_ctc"
@@ -24,21 +25,21 @@ class ExportCTC(Operator, ExportHelper):
     
     @staticmethod
     def measureChain(chain):
-        if chain.type != "EMPTY" or "Type" not in chain or chain["Type"]!="CTC_Chain":
+        if not checkIsChain(chain):
             raise ValueError("Passed non-chain object %s"%chain.name)
         count = 0
-        current = [obj for obj in chain.children if obj.type == "EMPTY" and "Type" in obj and obj["Type"]=="CTC_Node"]
+        current = [obj for obj in chain.children if checkIsNode(obj)]
         while current:
             if len(current)>1:
                 raise ValueError("Forked chain not under specification %s"%chain.name)
-            current = [obj for obj in current[0].children if obj.type == "EMPTY" and "Type" in obj and obj["Type"]=="CTC_Node"]
+            current = [obj for obj in current[0].children if checkIsNode(obj)]
             count += 1
         return count
             
     
     @staticmethod
     def getFile():
-        candidates = [obj for obj in bpy.context.scene.objects if obj.type == "EMPTY" and "Type" in obj and obj["Type"]=="CTC"]
+        candidates = [obj for obj in bpy.context.scene.objects if checkIsCTC(obj)]
         if len(candidates) != 1:
             raise ValueError("Invalid number of ctc roots: %d"%len(candidates))
         fileHead = {key:candidates[0][key] for key in candidates[0].keys() if key in Header.fields}
@@ -50,7 +51,7 @@ class ExportCTC(Operator, ExportHelper):
         
     @staticmethod
     def getChains(file):
-        candidates = [obj for obj in file.children if obj.type == "EMPTY" and "Type" in obj and obj["Type"]=="CTC_Chain"]
+        candidates = [obj for obj in file.children if checkIsChain(obj)]
         chains = []
         for chain in candidates:
             arecord = {key:chain[key] for key in chain.keys() if key in ARecord.fields}
@@ -62,21 +63,21 @@ class ExportCTC(Operator, ExportHelper):
         return chains, candidates
     
     @staticmethod
-    def chainToNodes(chain):
-        current = [obj for obj in chain.children if obj.type == "EMPTY" and "Type" in obj and obj["Type"]=="CTC_Node"]
+    def chainToNodes(parent):
+        current = [obj for obj in parent.children if checkIsNode(obj)]
         if not current:
             return []
         else:
             if len(current)>1:
-                raise ValueError("Forked chain not under specification %s"%chain.name)
+                raise ValueError("Forked chain not under specification %s"%parent.name)
             currentNode = current[0]
-            if currentNode.type != "EMPTY" or "Type" not in currentNode or currentNode["Type"]!="CTC_Node":
+            if not checkIsNode(currentNode):
                 raise ValueError("Non-node object on chain %s"%currentNode.name)
             brecord = {key:currentNode[key] for key in currentNode.keys() if key in BRecord.fields}
             brecord["Matrix"] = Matrix(currentNode["Matrix"])
             brecord["Vector"] = Vector(currentNode["Vector"])
             brecord["unknownByteSetTwo"] = [currentNode["UnknownByte%02d"%i] for i in range(5)]
-            brecord["isChainParent"] = "Type" in chain and chain["Type"]=="CTC_Chain"
+            brecord["isChainParent"] = checkIsChain(parent)
             brecord["boneFunctionID"] = currentNode.constraints["Bone Function"].target["boneFunction"]
             #"unknownByteSetTwo","byte[5]"
             return [BRecord().construct(brecord)]+ExportCTC.chainToNodes(currentNode)
