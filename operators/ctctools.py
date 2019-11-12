@@ -59,7 +59,7 @@ def createChain(col,w,ub,xg,yg,zg,xi,yi,zi,uf1,uf2,uf3,wm,lod):
     chain["lod"] = lod
     return chain
 
-def createCTCNode(rootco,ubst,vec,mat):
+def createCTCNode(rootco,ubst = [0]*5,vec = Vector([0,0,0]),mat = Matrix.Identity(4)):
         o = bpy.data.objects.new("CtcNode", None )
         bpy.context.scene.objects.link( o )
         mod = o.constraints.new(type = "CHILD_OF")#name= "Bone Function"
