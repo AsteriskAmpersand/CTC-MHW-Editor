@@ -24,16 +24,32 @@ class ExportCCL(Operator, ExportHelper):
     scale = FloatProperty(
         name = "Divide sphere radius." ,
         description = "Divide sphere radii when writing back to file (Factor of 2 according to Statyk)",
-        default = 1.0)        
+        default = 1.0)
+    
+    missingFunctionBehaviour = EnumProperty(
+            name = "Missing Bone Functions",
+            description = "Determines what to do while opening a file with missing bone functions",
+            items = [("Abort","Abort","Aborts exporting process",0),
+                     ("Omit","Omit","Omit the sphere pair",1),
+                     ("Dummy","Dummy","Sets the bone function to 255 and continues creating the capsule",2)],
+            default = "Truncate"
+            )    
     
     def execute(self,context):
+        self.errors = []
         try:
             bpy.ops.object.mode_set(mode='OBJECT')
         except:
             pass
         bpy.ops.object.select_all(action='DESELECT')
         capsules = self.getCapsules()
-        records = [self.capsuleToRecord(capsule) for capsule in capsules]
+        records = []
+        for capsule in capsules:
+            try: records.append(self.capsuleToRecord(capsule))
+            except: 
+                if self.missingFunctionBehaviour == "Abort": 
+                    self.displayErrors(self.errors)
+                    return {'CANCELED'}
         binfile = self.recordsToFile(records)
         with open(self.properties.filepath,"wb") as output:
             output.write(binfile.serialize())
@@ -44,14 +60,6 @@ class ExportCCL(Operator, ExportHelper):
         return CCL().construct({"Records":records})
 
     @staticmethod
-    def findFunction(functionID):
-        match = [obj for obj in bpy.context.scene.objects if obj.type == "EMPTY" 
-                 and "boneFunction" in obj and obj["boneFunction"] == functionID]
-        if len(match) != 1:
-            raise ValueError(("Multiple" if len(match) else "No" )+" Function ID Matches for %d"%functionID)
-        return match[0]
-
-    @staticmethod
     def getCapsules():
         return sorted([obj for obj in bpy.context.scene.objects 
                 if "Type" in obj and obj["Type"] == "CCL"],key = lambda x: x.name)
@@ -59,7 +67,8 @@ class ExportCCL(Operator, ExportHelper):
     def capsuleToRecord(self, capsule):
         data = {}
         offset_matrix1, offset_matrix2 = ExportCCL.getCapsuleMatrices(capsule)
-        id1, id2 = ExportCCL.getCapsuleID(capsule)
+        try: id1, id2 = self.getCapsuleID(capsule)
+        except: raise ValueError
         trans1 = getCol(offset_matrix1,3)
         scale1 = offset_matrix1[0][0]
         trans2 = getCol(offset_matrix2,3)
@@ -78,11 +87,18 @@ class ExportCCL(Operator, ExportHelper):
         s1,s2 = ExportCCL.getSpheres(capsule)
         return s1.matrix_basis, s2.matrix_basis
     
-    @staticmethod
-    def getCapsuleID(capsule):
+
+    def getFunction(self, sphere):
+        try: return sphere.constraints["Bone Function"].target["boneFunction"]
+        except:
+            self.errors.append("Missing Bone Function on Node %s"%sphere.name)
+            if self.missingFunctionBehaviour == "Dummy": return 255
+            else: raise ValueError
+
+    def getCapsuleID(self, capsule):
         s1,s2 = ExportCCL.getSpheres(capsule)
-        b1 = s1.constraints["Bone Function"].target["boneFunction"]
-        b2 = s2.constraints["Bone Function"].target["boneFunction"]
+        b1 = self.getFunction(s1)
+        b2 = self.getFunction(s2)
         return b1,b2
     
     @staticmethod
@@ -95,7 +111,24 @@ class ExportCCL(Operator, ExportHelper):
               and empty["Position"] == "End"))
         return s1, s2
         
+    @staticmethod
+    def showMessageBox(message = "", title = "Message Box", icon = 'INFO'):
     
+        def draw(self, context):
+            self.layout.label(message)
+    
+        bpy.context.window_manager.popup_menu(draw, title = title, icon = icon)
+
+    @staticmethod
+    def displayErrors(errors):
+        if errors:
+            for _ in range(20):print()
+            print("CTC Import Errors:")
+            print("#"*75)
+            print(errors)
+            print("#"*75)
+            ExportCCL.showMessageBox("Warnings have been Raised, check them in Window > Toggle_System_Console", title = "Warnings and Error Log")
+        
     
 def menu_func_export(self, context):
     self.layout.operator(ExportCCL.bl_idname, text="MHW CCL (.ccl)")

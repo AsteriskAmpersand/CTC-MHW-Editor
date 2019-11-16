@@ -22,7 +22,16 @@ class ExportCTC(Operator, ExportHelper):
     # ImportHelper mixin class uses this
     filename_ext = ".ccl"
     filter_glob = StringProperty(default="*.ctc", options={'HIDDEN'}, maxlen=255)
-    
+
+    missingFunctionBehaviour = EnumProperty(
+            name = "Missing Bone Functions",
+            description = "Determines what to do while opening a file with missing bone functions",
+            items = [("Abort","Abort","Aborts exporting process",0),
+                     ("Truncate","Truncate","Truncates the chain up to the offending node",1),
+                     ("Dummy","Dummy","Sets the bone function to 255 and continues creating the chain",2)],
+            default = "Truncate"
+            )    
+
     @staticmethod
     def measureChain(chain):
         if not checkIsChain(chain):
@@ -37,11 +46,11 @@ class ExportCTC(Operator, ExportHelper):
         return count
             
     
-    @staticmethod
-    def getFile():
+    def getFile(self):
         candidates = [obj for obj in bpy.context.scene.objects if checkIsCTC(obj)]
         if len(candidates) != 1:
-            raise ValueError("Invalid number of ctc roots: %d"%len(candidates))
+            self.errors.append("Invalid number of ctc roots: %d"%len(candidates))
+            raise ValueError()
         fileHead = {key:candidates[0][key] for key in candidates[0].keys() if key in Header.fields}
         fileHead["unknownsConstantIntSet"] = [candidates[0]["unknownsConstantIntSet%d"%i] for i in range(3)]
         fileHead["unknownFloatSet"] = [candidates[0]["unknownFloatSet%d"%i] for i in range(3)]        
@@ -62,8 +71,7 @@ class ExportCTC(Operator, ExportHelper):
             chains.append(ARecord().construct(arecord))
         return chains, candidates
     
-    @staticmethod
-    def chainToNodes(parent):
+    def chainToNodes(self, parent):
         current = [obj for obj in parent.children if checkIsNode(obj)]
         if not current:
             return []
@@ -78,23 +86,55 @@ class ExportCTC(Operator, ExportHelper):
             brecord["Vector"] = Vector(currentNode["Vector"])
             brecord["unknownByteSetTwo"] = [currentNode["UnknownByte%02d"%i] for i in range(5)]
             brecord["isChainParent"] = checkIsChain(parent)
-            brecord["boneFunctionID"] = currentNode.constraints["Bone Function"].target["boneFunction"]
+            try: boneFunction = currentNode.constraints["Bone Function"].target["boneFunction"]
+            except:
+                self.errors.append("Missing Bone Function on Node %s"%currentNode.name)
+                if self.missingFunctionBehaviour == "Abort": raise ValueError()
+                if self.missingFunctionBehaviour == "Truncate": return []
+                if self.missingFunctionBehaviour == "Dummy": boneFunction = 255
+            brecord["boneFunctionID"] = boneFunction
             #"unknownByteSetTwo","byte[5]"
-            return [BRecord().construct(brecord)]+ExportCTC.chainToNodes(currentNode)
+            return [BRecord().construct(brecord)]+self.chainToNodes(currentNode)
         
     def execute(self,context):
+        self.errors = []
         try:
             bpy.ops.object.mode_set(mode='OBJECT')
         except:
             pass
         bpy.ops.object.select_all(action='DESELECT')
-        header,file = self.getFile()
+        try: header,file = self.getFile()
+        except: 
+            self.displayErrors(self.errors)
+            return {'CANCELED'}
         arecords,chains = self.getChains(file)
-        brecords = sum([self.chainToNodes(chain) for chain in chains],[])
+        try: brecords = sum([self.chainToNodes(chain) for chain in chains],[])
+        except: 
+            self.displayErrors(self.errors)
+            return {'CANCELED'}
         binfile = Ctc().construct(header,arecords,brecords).serialize()
         with open(self.properties.filepath,"wb") as output:
             output.write(binfile)
         return {'FINISHED'}
+    
+    @staticmethod
+    def showMessageBox(message = "", title = "Message Box", icon = 'INFO'):
+    
+        def draw(self, context):
+            self.layout.label(message)
+    
+        bpy.context.window_manager.popup_menu(draw, title = title, icon = icon)
+
+    @staticmethod
+    def displayErrors(errors):
+        if errors:
+            for _ in range(20):print()
+            print("CTC Import Errors:")
+            print("#"*75)
+            print(errors)
+            print("#"*75)
+            ExportCTC.showMessageBox("Warnings have been Raised, check them in Window > Toggle_System_Console", title = "Warnings and Error Log")
+    
     
 def menu_func_export(self, context):
     self.layout.operator(ExportCTC.bl_idname, text="MHW CTC (.ctc)")
