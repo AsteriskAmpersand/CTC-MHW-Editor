@@ -182,7 +182,10 @@ class CapsuleFromSelection(bpy.types.Operator):
         default = 1.0)
     def execute(self,context):
         endco =  bpy.context.scene.objects.active
-        selection = next((obj for obj in bpy.context.selected_objects if obj != endco))
+        try:
+            selection = next((obj for obj in bpy.context.selected_objects if obj != endco))
+        except:
+            selection = endco
         if "boneFunction" not in endco or "boneFunction" not in selection:
             raise ValueError("Selected Bone missing a Bone Function")
         createCapsule(selection,endco,self.r1,self.r2)
