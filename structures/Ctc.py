@@ -74,6 +74,21 @@ class ARecord(PyCStruct):
         data["zeroFloat"] = 0.0
         super().construct(data)
         return self
+    
+    renameScheme = {
+            	("chainLength","Chain Length"),
+            	("collision","CCL Collision"),
+            	("weightiness","Weightiness"),
+            	("xGravity","X-Axis Gravity"),
+            	("yGravity","Y-Axis Gravity"),
+            	("zGravity","Z-Axis Gravity"),
+            	("xInertia","Snapping"),
+            	("yInertia","Cone of Motion"),
+            	("zInertia","Tension"),
+            	("windMultiplier","Wind Multiplier"),
+            	("lod","Level of Detail")
+            }
+    
 #} arecord [ header.numARecords ] 
 class BRecord(PyCStruct):
     fields = OrderedDict([
