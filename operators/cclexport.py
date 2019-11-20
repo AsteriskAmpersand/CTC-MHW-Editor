@@ -32,7 +32,7 @@ class ExportCCL(Operator, ExportHelper):
             items = [("Abort","Abort","Aborts exporting process",0),
                      ("Omit","Omit","Omit the sphere pair",1),
                      ("Dummy","Dummy","Sets the bone function to 255 and continues creating the capsule",2)],
-            default = "Truncate"
+            default = "Omit"
             )    
     
     def execute(self,context):

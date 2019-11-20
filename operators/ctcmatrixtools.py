@@ -63,7 +63,7 @@ class ctcSet(ctcNodeBase):
         )
     def core_operator(self, context):
         for obj in context.selected_objects:
-            self.setProperty(obj, self.addon.preferences.__getattr__(self.buffer))
+            self.setProperty(obj, self.addon.preferences.__getattribute__(self.buffer))
         return {'FINISHED'}
     
 class get_all_matrices(ctcGet):
@@ -198,7 +198,7 @@ class set_chain_data(ctcChainBase):
         )
     def core_operator(self, context):
         for obj in context.selected_objects:
-            self.setProperty(obj, self.addon.preferences.__getattr__(self.buffer))
+            self.setProperty(obj, self.addon.preferences.__getattribute__(self.buffer))
         return {'FINISHED'}
     @staticmethod
     def setProperty(obj,value):

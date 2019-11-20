@@ -59,7 +59,7 @@ def createChain(col,w,ub,xg,yg,zg,xi,yi,zi,uf1,uf2,uf3,wm,lod):
     chain["lod"] = lod
     return chain
 
-def createCTCNode(rootco,ubst = [0]*5,vec = Vector([0,0,0]),mat = Matrix.Identity(4)):
+def createCTCNode(rootco,ubst = [0]*5,vec = Vector([0,0,0,1]),mat = Matrix.Identity(4)):
         o = bpy.data.objects.new("CtcNode", None )
         bpy.context.scene.objects.link( o )
         mod = o.constraints.new(type = "CHILD_OF")#name= "Bone Function"
@@ -114,7 +114,7 @@ def getLowerChain(chainStart):
     
 def getDescendantOrNone(bone):
     children = sorted([obj for obj in bone.children if checkIsBone(obj)],
-                       keyword = lambda x: abs(int(x["boneFunction"])-bone["boneFunction"]))
+                       key = lambda x: abs(int(x["boneFunction"])-bone["boneFunction"]))
     if children:
         return children[0]
     else: return None
@@ -123,7 +123,7 @@ def getChainEnd(active):
     child = getChild(active)
     if not child:
         if checkIsChain(active):
-            raise ValueError("Chain has no nodes")
+            raise ValueError("Chain has no nodactivees")
         return active
     else:
         return getChainEnd(child)
@@ -348,7 +348,7 @@ class extendChain(bpy.types.Operator):
         active = bpy.context.active_object
         selection = [obj for obj in bpy.context.selected_objects if obj != active]
         self.validate(active, selection)
-        insert = createCTCNode(active)
+        insert = createCTCNode(selection[0])
         formerContinuation = getDescendantOrNone(active)
         insert.parent = active
         if formerContinuation: formerContinuation.parent = insert
@@ -416,7 +416,7 @@ class reendChain(bpy.types.Operator):
             if not checkIsBone(current):
                 raise ValueError("Non-bone on skeleton, or boneFunction missing in %s"%current.name)
             skeletonChain.append(current)
-            current = skeletonEnd.parent
+            current = current.parent
         for c,b in zip(reversed(ctcChain),skeletonChain):
             c.constraints["Bone Function"].target = b
         return
