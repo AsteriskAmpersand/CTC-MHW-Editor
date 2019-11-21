@@ -13,6 +13,7 @@ from mathutils import Vector, Matrix
 from ..structures.Ctc import Ctc,Header,ARecord,BRecord
 from ..operators.ccltools import getCol
 from ..operators.ctctools import checkIsChain, checkIsNode, checkIsChainStart, checkIsCTC
+chainPropInverse = {value:key for key, value in ARecord.renameScheme.items()}
 
 class ExportCTC(Operator, ExportHelper):
     bl_idname = "custom_export.export_mhw_ctc"
@@ -63,10 +64,10 @@ class ExportCTC(Operator, ExportHelper):
         candidates = [obj for obj in file.children if checkIsChain(obj)]
         chains = []
         for chain in candidates:
-            arecord = {key:chain[key] for key in chain.keys() if key in ARecord.fields}
+            arecord = {chainPropInverse[key]:chain[key] for key in chain.keys() if key in ARecord.fields}
             #("unknownByteSet","byte[2]"),("unknownByteSetCont","byte[12]"),
-            arecord["unknownByteSet"] = [chain["unknownBytes%02d"%i] for i in range(2)]
-            arecord["unknownByteSetCont"]  = [chain["unknownBytes%02d"%i] for i in range(2,14)]
+            arecord["unknownByteSet"] = [chain["{Unknown Bytes %02d}"%i] for i in range(2)]
+            arecord["unknownByteSetCont"]  = [chain["{Unknown Bytes %02d}"%i] for i in range(2,14)]
             arecord["chainLength"] = ExportCTC.measureChain(chain)
             chains.append(ARecord().construct(arecord))
         return chains, candidates

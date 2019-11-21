@@ -76,17 +76,20 @@ class ARecord(PyCStruct):
         return self
     
     renameScheme = {
-            	("chainLength","Chain Length"),
-            	("collision","CCL Collision"),
-            	("weightiness","Weightiness"),
-            	("xGravity","X-Axis Gravity"),
-            	("yGravity","Y-Axis Gravity"),
-            	("zGravity","Z-Axis Gravity"),
-            	("xInertia","Snapping"),
-            	("yInertia","Cone of Motion"),
-            	("zInertia","Tension"),
-            	("windMultiplier","Wind Multiplier"),
-            	("lod","Level of Detail")
+            	"chainLength":"Chain Length",
+            	"collision":"CCL Collision",
+            	"weightiness":"Weightiness",
+            	"xGravity":"X-Axis Gravity",
+            	"yGravity":"Y-Axis Gravity",
+            	"zGravity":"Z-Axis Gravity",
+            	"xInertia":"Snapping",
+            	"yInertia":"Cone of Motion",
+            	"zInertia":"Tension",
+            	"windMultiplier":"Wind Multiplier",
+            	"lod":"Level of Detail",
+            	"unknownFloatTwo":"{Unknown Float 00}",#100
+            	"unknownFloatThree":"{Unknown Float 01}",#0
+            	"unknownFloatFour":"{Unknown Float 02}"                
             }
     
 #} arecord [ header.numARecords ] 

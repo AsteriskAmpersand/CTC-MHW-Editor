@@ -14,6 +14,8 @@ import bpy
 from mathutils import Vector, Matrix
 from bpy.props import IntProperty, StringProperty, BoolProperty, EnumProperty, FloatProperty
 from ..operators.ccltools import findFunction
+from ..structures.Ctc import ARecord
+chainProp = ARecord.renameScheme
 
 def createCTCHeader(ucis,uci,ticks,pose,damp,react,grav,windM,windL,windH,ufs):
     header = bpy.data.objects.new("CtcHeader", None )
@@ -43,20 +45,20 @@ def createChain(col,w,ub,xg,yg,zg,xi,yi,zi,uf1,uf2,uf3,wm,lod):
     chain.empty_draw_size = .75
     chain.empty_draw_type = "CIRCLE"
     chain.show_x_ray = True
-    chain["collision"] = col
-    chain["weightiness"] = w
-    for i,byte in enumerate(ub): chain["unknownBytes%02d"%i] = byte
-    chain["xGravity"] = xg
-    chain["yGravity"] = yg
-    chain["zGravity"] = zg
-    chain["xInertia"] = xi
-    chain["yInertia"] = yi
-    chain["zInertia"] = zi
-    chain["unknownFloatTwo"] = uf1
-    chain["unknownFloatThree"] = uf2
-    chain["unknownFloatFour"] = uf3
-    chain["windMultiplier"] = wm
-    chain["lod"] = lod
+    chain[chainProp["collision"]] = col
+    chain[chainProp["weightiness"]] = w
+    for i,byte in enumerate(ub): chain["{Unknown Bytes %02d}"%i] = byte
+    chain[chainProp["xGravity"]] = xg
+    chain[chainProp["yGravity"]] = yg
+    chain[chainProp["zGravity"]] = zg
+    chain[chainProp["xInertia"]] = xi
+    chain[chainProp["yInertia"]] = yi
+    chain[chainProp["zInertia"]] = zi
+    chain[chainProp["unknownFloatTwo"]] = uf1
+    chain[chainProp["unknownFloatThree"]] = uf2
+    chain[chainProp["unknownFloatFour"]] = uf3
+    chain[chainProp["windMultiplier"]] = wm
+    chain[chainProp["lod"]] = lod
     return chain
 
 def createCTCNode(rootco,ubst = [0]*5,vec = Vector([0,0,0,1]),mat = Matrix.Identity(4)):
