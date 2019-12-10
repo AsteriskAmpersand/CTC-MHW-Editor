@@ -49,7 +49,7 @@ class ExportCCL(Operator, ExportHelper):
             except: 
                 if self.missingFunctionBehaviour == "Abort": 
                     self.displayErrors(self.errors)
-                    return {'CANCELED'}
+                    return {'CANCELLED'}
         binfile = self.recordsToFile(records)
         with open(self.properties.filepath,"wb") as output:
             output.write(binfile.serialize())
