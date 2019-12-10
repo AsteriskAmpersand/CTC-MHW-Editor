@@ -107,12 +107,12 @@ class ExportCTC(Operator, ExportHelper):
         try: header,file = self.getFile()
         except: 
             self.displayErrors(self.errors)
-            return {'CANCELED'}
+            return {'CANCELLED'}
         arecords,chains = self.getChains(file)
         try: brecords = sum([self.chainToNodes(chain) for chain in chains],[])
         except: 
             self.displayErrors(self.errors)
-            return {'CANCELED'}
+            return {'CANCELLED'}
         binfile = Ctc().construct(header,arecords,brecords).serialize()
         with open(self.properties.filepath,"wb") as output:
             output.write(binfile)
