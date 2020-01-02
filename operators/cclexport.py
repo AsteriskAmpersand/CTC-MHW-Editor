@@ -19,14 +19,14 @@ class ExportCCL(Operator, ExportHelper):
  
     # ImportHelper mixin class uses this
     filename_ext = ".ccl"
-    filter_glob = StringProperty(default="*.ccl", options={'HIDDEN'}, maxlen=255)
+    filter_glob : StringProperty(default="*.ccl", options={'HIDDEN'}, maxlen=255)
     
-    scale = FloatProperty(
+    scale : FloatProperty(
         name = "Divide sphere radius." ,
         description = "Divide sphere radii when writing back to file (Factor of 2 according to Statyk)",
         default = 1.0)
     
-    missingFunctionBehaviour = EnumProperty(
+    missingFunctionBehaviour : EnumProperty(
             name = "Missing Bone Functions",
             description = "Determines what to do while opening a file with missing bone functions",
             items = [("Abort","Abort","Aborts exporting process",0),
@@ -115,7 +115,7 @@ class ExportCCL(Operator, ExportHelper):
     def showMessageBox(message = "", title = "Message Box", icon = 'INFO'):
     
         def draw(self, context):
-            self.layout.label(message)
+            self.layout.label(text=message)
     
         bpy.context.window_manager.popup_menu(draw, title = title, icon = icon)
 

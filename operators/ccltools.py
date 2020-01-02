@@ -43,7 +43,7 @@ def convexHull(ob):
     bmesh.ops.convex_hull(bm, input=bm.verts)
     bm.to_mesh(ch)
     copy.data = ch
-    bpy.context.scene.objects.link(copy)
+    bpy.context.collection.objects.link(copy)
     bm.free()
     deleteObject(ob)
     return copy
@@ -52,7 +52,7 @@ def createMesh(offset, radius, bone):
     rootco = bone.matrix_world.translation
     finalco = rootco+offset
     finalcoMatrix = transToMat(finalco)
-    bpyscene = bpy.context.scene        
+    bpyscene = bpy.context.collection
     # Create an empty mesh and the object.
     mesh = bpy.data.meshes.new('CapsuleSphere')
     basic_sphere = bpy.data.objects.new("CapsuleSphere", mesh)        
@@ -111,7 +111,7 @@ def renderCapsules(capsule):
 def createGeometry(offset, radius, rootco):
     offset = insertRadiusToMat(radius,transToMat(offset))
     o = bpy.data.objects.new("Capsule", None )
-    bpy.context.scene.objects.link( o )
+    bpy.context.collection.objects.link( o )
     mod = o.constraints.new(type = "CHILD_OF")#name= "Bone Function"
     mod.name = "Bone Function"
     mod.target = rootco
@@ -123,7 +123,7 @@ def createGeometry(offset, radius, rootco):
 
 def joinEmpties(obs):
     o = bpy.data.objects.new("Capsule", None )
-    bpy.context.scene.objects.link( o )
+    bpy.context.collection.objects.link( o )
     for ob in obs:
         ob.parent = o
     return o
@@ -153,18 +153,18 @@ def duplicateCapsule(capsule,xmirror=False,ymirror=False,zmirror=False):
 
 class CCLTools(bpy.types.Panel):
     bl_category = "MHW Physics"
-    bl_idname = "panel.mhw_ccl"
+    bl_idname = "panel.PANEL_PT_mhw_ccl"
     bl_label = "CCL Tools"
     bl_space_type = "VIEW_3D"
-    bl_region_type = "TOOLS"
+    bl_region_type = "UI"
     # bl_category = "Tools"
 
     def draw(self, context):
-        self.layout.label("CCL Capsule Tools")
+        self.layout.label(text="CCL Capsule Tools")
         self.layout.operator("ccl_tools.mesh_from_capsule", icon='MESH_CUBE', text="Mesh from Capsule")
         self.layout.operator("ccl_tools.capsule_from_selection", text="Capsule from Selection")
         self.layout.operator('ccl_tools.duplicate_capsule', text="Duplicate Capsule")
-        self.layout.label("CCL Data Tools")
+        self.layout.label(text="CCL Data Tools")
         self.layout.operator('ccl_tools.copy_data', text="Copy Unknowns")
         self.layout.operator('ccl_tools.paste_data', text="Paste Unknowns")
 
@@ -172,11 +172,11 @@ class CapsuleFromSelection(bpy.types.Operator):
     bl_idname = 'ccl_tools.capsule_from_selection'
     bl_label = 'CCL Capsule From Selection'
     bl_options = {"REGISTER", "UNDO"}
-    r1 = FloatProperty(
+    r1 : FloatProperty(
         name = "Start Sphere Radius" ,
         description = "Starting Sphere Radius (Tends to be 0 Radius)",
         default = 0.0)
-    r2 = FloatProperty(
+    r2 : FloatProperty(
         name = "End Sphere Radius" ,
         description = "End Sphere",
         default = 1.0)
@@ -210,13 +210,13 @@ class DuplicateCapsule(bpy.types.Operator):
     bl_idname = 'ccl_tools.duplicate_capsule'
     bl_label = 'Duplicate Capsule'
     bl_options = {"REGISTER", "UNDO"}
-    xmirror = BoolProperty(name = "Mirror X Axis.",
+    xmirror : BoolProperty(name = "Mirror X Axis.",
         description = "Mirrors along the axis",
         default = False)
-    ymirror = BoolProperty(name = "Mirror Y Axis.",
+    ymirror : BoolProperty(name = "Mirror Y Axis.",
         description = "Mirrors along the axis",
         default = False)
-    zmirror = BoolProperty(name = "Mirror Z Axis.",
+    zmirror : BoolProperty(name = "Mirror Z Axis.",
         description = "Mirrors along the axis",
         default = False)
     def execute(self,context):

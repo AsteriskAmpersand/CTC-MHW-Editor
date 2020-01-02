@@ -13,7 +13,8 @@ bl_info = {
     "category": "Import-Export",
     "author": "AsteriskAmpersand (Code), UberGrainy, Statyk & Karbon (Structure)",
     "location": "File > Import-Export > Mod3/MHW",
-    "version": (1,0,0)
+    "version": (2,0,0),
+    "blender": (2,80,0)
 }
  
 import bpy
@@ -64,17 +65,17 @@ def register():
     for cl in classes:
         bpy.utils.register_class(cl)
     for iF in importFunctions:
-        bpy.types.INFO_MT_file_import.append(iF)
+        bpy.types.TOPBAR_MT_file_import.append(iF)
     for iF in exportFunctions:
-        bpy.types.INFO_MT_file_export.append(iF)
+        bpy.types.TOPBAR_MT_file_export.append(iF)
     
 def unregister():
     for cl in classes:
         bpy.utils.unregister_class(cl)
     for iF in importFunctions:
-        bpy.types.INFO_MT_file_import.remove(iF)
+        bpy.types.TOPBAR_MT_file_import.remove(iF)
     for iF in exportFunctions:
-        bpy.types.INFO_MT_file_export.remove(iF)   
+        bpy.types.TOPBAR_MT_file_export.remove(iF)   
     
 if __name__ == "__main__":
     try:

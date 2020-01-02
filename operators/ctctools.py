@@ -19,7 +19,7 @@ chainProp = ARecord.renameScheme
 
 def createCTCHeader(ucis,uci,ticks,pose,damp,react,grav,windM,windL,windH,ufs):
     header = bpy.data.objects.new("CtcHeader", None )
-    bpy.context.scene.objects.link( header )
+    bpy.context.collection.objects.link( header )
     #mod.inverse_matrix = node.matrix #experiment into the meaning of the matrix
     header.empty_draw_size = 0
     header.empty_draw_type = "SPHERE"
@@ -40,7 +40,7 @@ def createCTCHeader(ucis,uci,ticks,pose,damp,react,grav,windM,windL,windH,ufs):
 
 def createChain(col,w,ub,xg,yg,zg,xi,yi,zi,uf1,uf2,uf3,wm,lod):
     chain = bpy.data.objects.new("CtcChain", None )
-    bpy.context.scene.objects.link( chain )
+    bpy.context.collection.objects.link( chain )
     chain["Type"] = "CTC_Chain"
     chain.empty_draw_size = .75
     chain.empty_draw_type = "CIRCLE"
@@ -63,7 +63,7 @@ def createChain(col,w,ub,xg,yg,zg,xi,yi,zi,uf1,uf2,uf3,wm,lod):
 
 def createCTCNode(rootco,ubst = [0]*5,vec = Vector([0,0,0,1]),mat = Matrix.Identity(4)):
         o = bpy.data.objects.new("CtcNode", None )
-        bpy.context.scene.objects.link( o )
+        bpy.context.collection.objects.link( o )
         mod = o.constraints.new(type = "CHILD_OF")#name= "Bone Function"
         mod.name = "Bone Function"
         mod.target = rootco
@@ -132,7 +132,7 @@ def getChainEnd(active):
         
 def ShowMessageBox(message = "", title = "Message Box", icon = 'INFO'):
     def draw(self, context):
-        self.layout.label(message)
+        self.layout.label(text=message)
     bpy.context.window_manager.popup_menu(draw, title = title, icon = icon)
 
 class createCTC(bpy.types.Operator):
@@ -141,7 +141,7 @@ class createCTC(bpy.types.Operator):
     bl_description = 'Create CTC Header'
     bl_options = {"REGISTER", "UNDO"}
     
-    ucis = EnumProperty(
+    ucis : EnumProperty(
             name = "Unknown Int Set",
             description = "Set of 4 Unknown Ints",
             items = [
@@ -149,7 +149,7 @@ class createCTC(bpy.types.Operator):
                     ('(27, 0, 1000)', "(27, 0, 100)", ""),
                     ]
             )
-    uci = EnumProperty(
+    uci : EnumProperty(
             name = "Unknown Int",
             description = "Unknown Int with Flag Structure",
             items = [
@@ -159,57 +159,57 @@ class createCTC(bpy.types.Operator):
                     ('8256', "00000000 00000000 00000000 01000000", ""),
                     ('268435456', "00010000 00000000 00000000 00000000", ""),
                     ])
-    ticks = FloatProperty(
+    ticks : FloatProperty(
             name = "Update Frequency",
             description = "Number of seconds between updates.",
             default = 1/6
             )
-    pose = FloatProperty(
+    pose : FloatProperty(
             name = "Pose Restitution Factor",
             description = "Plasticity in returning to the original position.",
             default = 1.0
             )
-    damp = FloatProperty(
+    damp : FloatProperty(
             name = "Dampening",
             description = "Dampening coefficient.",
             default = 1.0
             )
-    react = FloatProperty(
+    react : FloatProperty(
             name = "Reaction Speed",
             description = "Sensitivity to Movement.",
             default = 1.0
             )
-    grav = FloatProperty(
+    grav : FloatProperty(
             name = "Gravity Multiplier",
             description = "Global multiplier to gravity values.",
             default = 1.0
             )
-    windL = FloatProperty(
+    windL : FloatProperty(
             name = "Low Wind Multiplier",
             description = "Global multiplier to Weak Wind values.",
             default = 1.0
             )
-    windM = FloatProperty(
+    windM : FloatProperty(
             name = "Medium Wind Multiplier",
             description = "Global multiplier to Medium Wind values.",
             default = 1.0
             )
-    windH = FloatProperty(
+    windH : FloatProperty(
             name = "High Wind Multiplier",
             description = "Global multiplier to Strong Wind values.",
             default = 1.0
             )
-    uf1 = FloatProperty(
+    uf1 : FloatProperty(
             name = "Unknown Float 1",
             description = "Unknown Float Value.",
             default = 0.2
             )
-    uf2 = FloatProperty(
+    uf2 : FloatProperty(
             name = "Unknown Float 2",
             description = "Unknown Float Value.",
             default = 0.3
             )    
-    uf3 = FloatProperty(
+    uf3 : FloatProperty(
             name = "Unknown Float 3",
             description = "Unknown Float Value.",
             default = 0.2
@@ -237,67 +237,67 @@ class chainFromSelection(bpy.types.Operator):
     bl_description = 'Create CTC Chain from Selection'
     bl_options = {"REGISTER", "UNDO"}
 
-    col = IntProperty(
+    col : IntProperty(
             name = "Collision Type",
             description = "Collision Type Enumeration Index.",
             default = 4
             )
-    w = IntProperty(
+    w : IntProperty(
             name = "Weightiness",
             description = "Weight Dynamics Type Enumeration Index.",
             default = 7
             )
-    xg = FloatProperty(
+    xg : FloatProperty(
             name = "X-Axis Gravity",
             description = "Gravity Force along X Axis.",
             default = 0.0
             )
-    yg = FloatProperty(
+    yg : FloatProperty(
             name = "Y-Axis Gravity",
             description = "Gravity Force along Y Axis.",
             default = 980.0
             )
-    zg = FloatProperty(
+    zg : FloatProperty(
             name = "Z-Axis Gravity",
             description = "Gravity Force along Z Axis.",
             default = 0.0
             )
-    xi = FloatProperty(
+    xi : FloatProperty(
             name = "Pose Snapping",
             description = "Restitution Force to Original Position.",
             default = 0.05
             )
-    yi = FloatProperty(
+    yi : FloatProperty(
             name = "Cone of Motion",
             description = "Suspected Steradian Limitation to Motion.",
             default = 0.8
             )
-    zi = FloatProperty(
+    zi : FloatProperty(
             name = "Tension",
             description = "Restitution Speed to Original Position",
             default = 0.005
             )
-    uf1 = FloatProperty(
+    uf1 : FloatProperty(
             name = "Unknown Float 1",
             description = "Unknown",
             default = 100.0
             )
-    uf2 = FloatProperty(
+    uf2 : FloatProperty(
             name = "Unknown Float 2",
             description = "Unknown",
             default = 0.0
             )
-    uf3 = FloatProperty(
+    uf3 : FloatProperty(
             name = "Unknown Float 3",
             description = "Unknown",
             default = .1
             )
-    wm = FloatProperty(
+    wm : FloatProperty(
             name = "Wind Multiplier",
             description = "Strength of wind on Chain",
             default = 0.7
             )
-    lod = IntProperty(
+    lod : IntProperty(
             name = "Level of Detail",
             description = "Level of Detail index on which the physics are calculated.",
             default = 65535
@@ -308,7 +308,7 @@ class chainFromSelection(bpy.types.Operator):
         for bone in bpy.selection:
             node = createCTCNode(bone,[0]*5,Vector([0,0,0,1]),Matrix.Identity(4))
             node.parent = parent
-            bpy.context.scene.update()
+            bpy.context.view_layer.update()
             node.constraints["Bone Function"].inverse_matrix = parent.matrix_world.inverted()
             parent = node
     
@@ -439,7 +439,7 @@ class changeNodeTarget(bpy.types.Operator):
     bl_description = 'Change CTC Node Bone Function Target'
     bl_options = {"REGISTER", "UNDO"}
     
-    boneID = IntProperty(name = "New Bone Function ID",
+    boneID : IntProperty(name = "New Bone Function ID",
                             description = "Assign New Bone Function to Active",
                             default = False)
     def execute(self,context):
@@ -467,17 +467,17 @@ class realignChain(bpy.types.Operator):
     def execute(self,context):
         for bone in [b for b in bpy.context.scene.objects if checkIsChainStart(b)]:
             self.recursiveRealignNode(bone)
-        bpy.context.scene.update()
+        bpy.context.view_layer.update()
         return {"FINISHED"}
     
     def recursiveRealignNode(self,node):
         parent = node.parent
         node.constraints["Bone Function"].inverse_matrix = parent.matrix_world.inverted()
-        bpy.context.scene.update()
+        bpy.context.view_layer.update()
         for children in [n for n in node.children if checkIsNode(n)]:
             self.recursiveRealignNode(children)
         node.constraints["Bone Function"].target = node.constraints["Bone Function"].target
-        bpy.context.scene.update()
+        bpy.context.view_layer.update()
     
 class findDuplicates(bpy.types.Operator):
     bl_idname = 'ctc_tools.find_duplicates'

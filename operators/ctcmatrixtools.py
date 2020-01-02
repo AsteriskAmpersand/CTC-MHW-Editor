@@ -15,7 +15,7 @@ class ctcBase(bpy.types.Operator):
     bl_options = {'INTERNAL'}
     addon_key = __package__.split('.')[0]
     def __init__(self):
-        self.addon = bpy.context.user_preferences.addons[self.addon_key]        
+        self.addon = bpy.context.preferences.addons[self.addon_key]        
     def execute (self, context):
         return self.core_operator(context)
 

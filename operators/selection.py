@@ -57,4 +57,4 @@ class Selection(bpy.types.Header):
 	def draw(self, context):
 		layout = self.layout
 		row = layout.row()
-		row.label("Sel: "+str(len(bpy.selection)))
+		row.label(text = "Sel: "+str(len(bpy.selection)))

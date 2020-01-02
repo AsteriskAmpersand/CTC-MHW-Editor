@@ -15,21 +15,21 @@ class CTCPrefs(bpy.types.AddonPreferences):
     matrices_buffer = {}
     unknown_bytes_buffer = [0]*5
     chain_buffer = {}
-    rotation_buffer = bpy.props.FloatVectorProperty(
+    rotation_buffer : bpy.props.FloatVectorProperty(
         name = 'Rotation Buffer',
         description = 'Stored node rotation matrix',
         precision = 3,
         size = 3,
         subtype = 'EULER'#EULER
     )
-    translation_buffer = bpy.props.FloatVectorProperty(
+    translation_buffer : bpy.props.FloatVectorProperty(
         name = 'Trasnslation Buffer',
         description = 'Stored node translation matrix',
         precision = 3,
         size = 3,
         subtype = 'XYZ'
     )
-    unknown_vector_buffer = bpy.props.FloatVectorProperty(
+    unknown_vector_buffer : bpy.props.FloatVectorProperty(
         name = 'Unknown Vector Buffer',
         description = 'Stored unknown vector',
         precision = 3,

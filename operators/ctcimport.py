@@ -25,9 +25,9 @@ class ImportCTC(Operator, ImportHelper):
  
     # ImportHelper mixin class uses this
     filename_ext = ".ctc"
-    filter_glob = StringProperty(default="*.ctc", options={'HIDDEN'}, maxlen=255)
+    filter_glob : StringProperty(default="*.ctc", options={'HIDDEN'}, maxlen=255)
        
-    missingFunctionBehaviour = EnumProperty(
+    missingFunctionBehaviour : EnumProperty(
             name = "Missing Bone Functions",
             description = "Determines what to do while opening a file with missing bone functions",
             items = [("Abort","Abort","Aborts importing process",0),
@@ -95,7 +95,7 @@ class ImportCTC(Operator, ImportHelper):
             try:
                 node = self.createRecordNode(node)
                 node.parent = parent
-                bpy.context.scene.update()
+                bpy.context.view_layer.update()
                 node.constraints["Bone Function"].inverse_matrix = parent.matrix_world.inverted()
                 parent = node
             except BoneFunctionError:
@@ -112,7 +112,7 @@ class ImportCTC(Operator, ImportHelper):
     def showMessageBox(message = "", title = "Message Box", icon = 'INFO'):
     
         def draw(self, context):
-            self.layout.label(message)
+            self.layout.label(text=message)
     
         bpy.context.window_manager.popup_menu(draw, title = title, icon = icon)
 
@@ -155,7 +155,7 @@ class ImportCTC(Operator, ImportHelper):
             if self.Abort:
                 self.cleanup(header)
                 break
-        bpy.context.scene.update()
+        bpy.context.view_layer.update()
         self.displayErrors('\r\n'.join(self.ErrorMessages))
         return {'FINISHED'}
     

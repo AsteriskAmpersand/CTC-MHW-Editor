@@ -21,14 +21,14 @@ class ImportCCL(Operator, ImportHelper):
  
     # ImportHelper mixin class uses this
     filename_ext = ".ccl"
-    filter_glob = StringProperty(default="*.ccl", options={'HIDDEN'}, maxlen=255)
+    filter_glob : StringProperty(default="*.ccl", options={'HIDDEN'}, maxlen=255)
     
-    scale = FloatProperty(
+    scale : FloatProperty(
         name = "Multiply sphere radius" ,
         description = "Multiply sphere radii (Factor of 2 according to Statyk)",
         default = 1.0)    
 
-    missingFunctionBehaviour = EnumProperty(
+    missingFunctionBehaviour : EnumProperty(
             name = "Missing Bone Functions",
             description = "Determines what to do while opening a file with missing bone functions",
             items = [("Abort","Abort","Aborts importing process",0),
@@ -47,7 +47,7 @@ class ImportCCL(Operator, ImportHelper):
     def showMessageBox(message = "", title = "Message Box", icon = 'INFO'):
     
         def draw(self, context):
-            self.layout.label(message)
+            self.layout.label(text=message)
     
         bpy.context.window_manager.popup_menu(draw, title = title, icon = icon)
 
