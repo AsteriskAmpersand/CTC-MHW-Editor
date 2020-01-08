@@ -26,7 +26,7 @@ class ctcNodeBase(ctcBase):
     addon_key = __package__.split('.')[0]
     @classmethod
     def poll(cls, context):
-        obj_curr = context.active_object
+        obj_curr = bpy.context.view_layer.objects.active
         return obj_curr and checkIsNode(obj_curr)
     
 class ctcChainBase(ctcBase):
@@ -36,7 +36,7 @@ class ctcChainBase(ctcBase):
     addon_key = __package__.split('.')[0]
     @classmethod
     def poll(cls, context):
-        obj_curr = context.active_object
+        obj_curr = bpy.context.view_layer.objects.active
         return obj_curr and checkIsChain(obj_curr)    
 
 class ctcGet(ctcNodeBase):
@@ -49,7 +49,7 @@ class ctcGet(ctcNodeBase):
             (len(selection)==1)
         )
     def core_operator(self, context):
-        self.addon.preferences.__setattr__(self.buffer,self.getProperty(context.active_object))
+        self.addon.preferences.__setattr__(self.buffer,self.getProperty(context.view_layer.objects.active))
         return {'FINISHED'}
         
 class ctcSet(ctcNodeBase):
@@ -177,7 +177,7 @@ class get_chain_data(ctcChainBase):
             (len(selection)==1)
         )
     def core_operator(self, context):
-        self.addon.preferences.__setattr__(self.buffer,self.getProperty(context.active_object))
+        self.addon.preferences.__setattr__(self.buffer,self.getProperty(context.view_layer.objects.active))
         return {'FINISHED'}
     @staticmethod
     def getProperty(obj):

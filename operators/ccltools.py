@@ -58,8 +58,8 @@ def createMesh(offset, radius, bone):
     basic_sphere = bpy.data.objects.new("CapsuleSphere", mesh)        
     # Add the object into the scene.
     bpyscene.objects.link(basic_sphere)
-    bpyscene.objects.active = basic_sphere
-    basic_sphere.select = True        
+    bpy.context.view_layer.objects.active = basic_sphere
+    basic_sphere.select_set(state=True)      
     # Construct the bmesh sphere and assign it to the blender mesh.
     bm = bmesh.new()
     bmesh.ops.create_uvsphere(bm, diameter=radius, 
@@ -87,15 +87,13 @@ def capsuleData(capsule):
     return co[0],r[0],i[0],co[1],r[1],i[1]
 
 def joinObjects(obs):
-    scene = bpy.context.scene
     ctx = bpy.context.copy()
     if not obs:
         return
     # one of the objects to join
-    ctx['active_object'] = obs[0]        
-    ctx['selected_objects'] = obs        
-    # we need the scene bases as well for joining
-    ctx['selected_editable_bases'] = [scene.object_bases[ob.name] for ob in obs]        
+    ctx["object"] = ctx["active_object"] = obs[0]
+    ctx["selected_objects"] = ctx["selected_editable_objects"] = obs
+    # we need the scene bases as well for joining  
     bpy.ops.object.join(ctx)
     return obs[0]
 
@@ -118,7 +116,7 @@ def createGeometry(offset, radius, rootco):
     o.matrix_basis = offset
     result = o
     o.show_bounds = True
-    o.draw_bounds_type = "SPHERE"
+    o.display_bounds_type = "SPHERE"
     return result
 
 def joinEmpties(obs):
@@ -130,10 +128,12 @@ def joinEmpties(obs):
         
 def createCapsule(f1,f2,r1,r2,co1=Vector([0,0,0]),co2=Vector([0,0,0])):
     s1 = createGeometry(co1, r1, f1)
+    s1.empty_display_type = "SPHERE"
     s1.name = "Start Sphere"
     s1["Type"] = "CCL_SPHERE"
     s1["Position"] = "Start"
     s2 = createGeometry(co2, r2, f2)
+    s2.empty_display_type = "SPHERE"
     s2.name = "End Sphere"
     s2["Type"] = "CCL_SPHERE"
     s2["Position"] = "End"
@@ -181,7 +181,7 @@ class CapsuleFromSelection(bpy.types.Operator):
         description = "End Sphere",
         default = 1.0)
     def execute(self,context):
-        endco =  bpy.context.scene.objects.active
+        endco =  bpy.context.view_layer.objects.active
         try:
             selection = next((obj for obj in bpy.context.selected_objects if obj != endco))
         except:
@@ -196,7 +196,7 @@ class MeshFromCapsule(bpy.types.Operator):
     bl_label = 'Render CCL Capsule'
     bl_options = {"REGISTER", "UNDO"}
     def execute(self,context):
-        capsule = bpy.context.scene.objects.active
+        capsule = bpy.context.view_layer.objects.active
         if capsule.type != "EMPTY" or "Type" not in capsule or capsule["Type"] != "CCL":
             raise ValueError("Not a ccl capsule")
         cleanCapsule(capsule)
@@ -220,7 +220,7 @@ class DuplicateCapsule(bpy.types.Operator):
         description = "Mirrors along the axis",
         default = False)
     def execute(self,context):
-        capsule = bpy.context.scene.objects.active
+        capsule = bpy.context.view_layer.objects.active
         if capsule.type != "EMPTY" or "Type" not in capsule or capsule["Type"] != "CCL":
             raise ValueError("Not a ccl capsule")
         duplicateCapsule(capsule,self.xmirror,self.ymirror,self.zmirror)
@@ -232,7 +232,7 @@ class CopyCCLData(bpy.types.Operator):
     bl_label = 'Copy Capsule Unknown Data'
     bl_options = {"REGISTER", "UNDO"}
     def execute(self,context):
-        capsule = bpy.context.scene.objects.active
+        capsule = bpy.context.view_layer.objects.active
         if capsule.type != "EMPTY" or "Type" not in capsule or capsule["Type"] != "CCL" or "Data" not in capsule:
             raise ValueError("Not a ccl capsule")
         global copyBuffer
@@ -244,7 +244,7 @@ class PasteCCLData(bpy.types.Operator):
     bl_label = 'Paste Capsule Unknown Data'
     bl_options = {"REGISTER", "UNDO"}
     def execute(self,context):
-        capsule = bpy.context.scene.objects.active
+        capsule = bpy.context.view_layer.objects.active
         if capsule.type != "EMPTY" or "Type" not in capsule or capsule["Type"] != "CCL":
             raise ValueError("Not a ccl capsule")
         global copyBuffer

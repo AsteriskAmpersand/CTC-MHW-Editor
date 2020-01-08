@@ -21,9 +21,9 @@ def createCTCHeader(ucis,uci,ticks,pose,damp,react,grav,windM,windL,windH,ufs):
     header = bpy.data.objects.new("CtcHeader", None )
     bpy.context.collection.objects.link( header )
     #mod.inverse_matrix = node.matrix #experiment into the meaning of the matrix
-    header.empty_draw_size = 0
-    header.empty_draw_type = "SPHERE"
-    header.show_x_ray = True
+    header.empty_display_size = 0
+    header.empty_display_type = "SPHERE"
+    header.show_in_front = True
     for i,ucv in enumerate(ucis): header["unknownsConstantIntSet%d"%i] = ucv 
     header["unknownConstantInt"] = uci
     header["updateTicks"] = ticks
@@ -42,9 +42,9 @@ def createChain(col,w,ub,xg,yg,zg,xi,yi,zi,uf1,uf2,uf3,wm,lod):
     chain = bpy.data.objects.new("CtcChain", None )
     bpy.context.collection.objects.link( chain )
     chain["Type"] = "CTC_Chain"
-    chain.empty_draw_size = .75
-    chain.empty_draw_type = "CIRCLE"
-    chain.show_x_ray = True
+    chain.empty_display_size = .75
+    chain.empty_display_type = "CIRCLE"
+    chain.show_in_front = True
     chain[chainProp["collision"]] = col
     chain[chainProp["weightiness"]] = w
     for i,byte in enumerate(ub): chain["{Unknown Bytes %02d}"%i] = byte
@@ -69,9 +69,9 @@ def createCTCNode(rootco,ubst = [0]*5,vec = Vector([0,0,0,1]),mat = Matrix.Ident
         mod.target = rootco
         #mod.inverse_matrix = node.matrix #experiment into the meaning of the matrix
         o["Type"] = "CTC_Node"
-        o.empty_draw_size = .5
-        o.empty_draw_type = "SPHERE"
-        o.show_x_ray = True
+        o.empty_display_size = .5
+        o.empty_display_type = "SPHERE"
+        o.show_in_front = True
         o.show_bounds = False
         for i in range(5):
             o["UnknownByte%02d"%i] = ubst[i]
@@ -347,7 +347,7 @@ class extendChain(bpy.types.Operator):
         chainRematchValidate(active, selection)
     
     def execute(self,context):
-        active = bpy.context.active_object
+        active = bpy.context.view_layer.objects.active
         selection = [obj for obj in bpy.context.selected_objects if obj != active]
         self.validate(active, selection)
         insert = createCTCNode(selection[0])
@@ -383,7 +383,7 @@ class restartChain(bpy.types.Operator):
         return
     
     def execute(self,context):
-        active = bpy.context.active_object
+        active = bpy.context.view_layer.objects.active
         selection = [obj for obj in bpy.context.selected_objects if obj != active]
         self.validate(active,selection)
         rootBone = selection[0]
@@ -424,7 +424,7 @@ class reendChain(bpy.types.Operator):
         return
     
     def execute(self,context):
-        active = bpy.context.active_object
+        active = bpy.context.view_layer.objects.active
         selection = [obj for obj in bpy.context.selected_objects if obj != active]
         self.validate(active,selection)
         rootBone = selection[0]
@@ -443,7 +443,7 @@ class changeNodeTarget(bpy.types.Operator):
                             description = "Assign New Bone Function to Active",
                             default = False)
     def execute(self,context):
-        active = bpy.context.active_object
+        active = bpy.context.view_layer.objects.active
         if not checkIsNode(active):
             raise ValueError("Active object is not a node.")
         try:
