@@ -82,7 +82,7 @@ def capsuleData(capsule):
     co, r, i = [], [], []
     for node in [empty for empty in capsule.children if empty.type == "EMPTY"]:
         co.append(Vector(getCol(node.matrix_basis,3)[0:3]))
-        r.append(node.matrix_basis[0][0])
+        r.append(node.empty_draw_size)
         i.append(node.constraints["Bone Function"].target)
     return co[0],r[0],i[0],co[1],r[1],i[1]
 
@@ -109,7 +109,7 @@ def renderCapsules(capsule):
     hull.parent = capsule
         
 def createGeometry(offset, radius, rootco):
-    offset = insertRadiusToMat(radius,transToMat(offset))
+    offset = transToMat(offset)
     o = bpy.data.objects.new("Capsule", None )
     bpy.context.scene.objects.link( o )
     mod = o.constraints.new(type = "CHILD_OF")#name= "Bone Function"
@@ -117,8 +117,8 @@ def createGeometry(offset, radius, rootco):
     mod.target = rootco
     o.matrix_basis = offset
     result = o
-    o.show_bounds = True
-    o.draw_bounds_type = "SPHERE"
+    o.empty_draw_type = "SPHERE"
+    o.empty_draw_size = radius
     return result
 
 def joinEmpties(obs):
@@ -161,12 +161,14 @@ class CCLTools(bpy.types.Panel):
 
     def draw(self, context):
         self.layout.label("CCL Capsule Tools")
-        self.layout.operator("ccl_tools.mesh_from_capsule", icon='MESH_CUBE', text="Mesh from Capsule")
-        self.layout.operator("ccl_tools.capsule_from_selection", text="Capsule from Selection")
-        self.layout.operator('ccl_tools.duplicate_capsule', text="Duplicate Capsule")
+        col = self.layout.column(align = True)
+        col.operator("ccl_tools.mesh_from_capsule", icon='MESH_CUBE', text="Mesh from Capsule")
+        col.operator("ccl_tools.capsule_from_selection", text="Capsule from Selection")
+        col.operator('ccl_tools.duplicate_capsule', text="Duplicate Capsule")
         self.layout.label("CCL Data Tools")
-        self.layout.operator('ccl_tools.copy_data', text="Copy Unknowns")
-        self.layout.operator('ccl_tools.paste_data', text="Paste Unknowns")
+        col = self.layout.column(align = True)
+        col.operator('ccl_tools.copy_data', text="Copy Unknowns")
+        col.operator('ccl_tools.paste_data', text="Paste Unknowns")
 
 class CapsuleFromSelection(bpy.types.Operator):
     bl_idname = 'ccl_tools.capsule_from_selection'

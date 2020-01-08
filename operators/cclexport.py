@@ -11,6 +11,7 @@ from bpy.types import Operator
 from mathutils import Vector, Matrix
 from ..structures.Ccl import CCLRecords, CCL
 from ..operators.ccltools import getCol
+accessScale = lambda scaleVector: scaleVector[0]
 
 class ExportCCL(Operator, ExportHelper):
     bl_idname = "custom_export.export_mhw_ccl"
@@ -20,11 +21,6 @@ class ExportCCL(Operator, ExportHelper):
     # ImportHelper mixin class uses this
     filename_ext = ".ccl"
     filter_glob = StringProperty(default="*.ccl", options={'HIDDEN'}, maxlen=255)
-    
-    scale = FloatProperty(
-        name = "Divide sphere radius." ,
-        description = "Divide sphere radii when writing back to file (Factor of 2 according to Statyk)",
-        default = 1.0)
     
     missingFunctionBehaviour = EnumProperty(
             name = "Missing Bone Functions",
@@ -67,26 +63,31 @@ class ExportCCL(Operator, ExportHelper):
     def capsuleToRecord(self, capsule):
         data = {}
         offset_matrix1, offset_matrix2 = ExportCCL.getCapsuleMatrices(capsule)
+        s1,s2 = ExportCCL.getCapsuleScales(capsule)
         try: id1, id2 = self.getCapsuleID(capsule)
         except: raise ValueError
         trans1 = getCol(offset_matrix1,3)
-        scale1 = offset_matrix1[0][0]
+        scale1 = s1
         trans2 = getCol(offset_matrix2,3)
-        scale2 = offset_matrix2[0][0]
+        scale2 = s2
         data["boneIDOne"] = id1
         data["boneIDTwo"] = id2
         data["unknownBytes"] = capsule["Data"]
         data["startsphere"] = trans1
         data["endsphere"] = trans2
-        data["startsphere_radius"] = scale1/self.scale
-        data["endsphere_radius"] = scale2/self.scale
+        data["startsphere_radius"] = scale1
+        data["endsphere_radius"] = scale2
         return CCLRecords().construct(data)
     
     @staticmethod
     def getCapsuleMatrices(capsule):
         s1,s2 = ExportCCL.getSpheres(capsule)
-        return s1.matrix_basis, s2.matrix_basis
-    
+        return (accessScale(s1.matrix_world.to_scale())*s1.empty_draw_size, 
+                accessScale(s2.matrix_world.to_scale())*s2.empty_draw_size)
+    @staticmethod
+    def getCapsuleScales(capsule):
+        s1,s2 = ExportCCL.getSpheres(capsule)
+        return s1.matrix_basis, s2.matrix_basis    
 
     def getFunction(self, sphere):
         try: return sphere.constraints["Bone Function"].target["boneFunction"]

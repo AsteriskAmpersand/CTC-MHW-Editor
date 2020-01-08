@@ -50,17 +50,17 @@ class ARecord(PyCStruct):
 	("collision","byte"),
 	("weightiness","byte"),
 	("unknownByteSet","byte[2]"),
-   ("fixedNegativeOne","byte[4]"),
-   ("oneZeroZeroZero1","byte[4]"),
-   ("oneZeroZeroZero2","byte[4]"),
-   ("unknownByteSetCont","byte[12]"),
+    ("fixedNegativeOne","byte[4]"),
+    ("oneZeroZeroZero1","byte[4]"),
+    ("oneZeroZeroZero2","byte[4]"),
+    ("unknownByteSetCont","byte[12]"),
 	("xGravity","float"),
 	("yGravity","float"),
 	("zGravity","float"),
 	("zeroFloat","float"),
-	("xInertia","float"),
-	("yInertia","float"),
-	("zInertia","float"),
+	("snapping","float"),
+	("coneLimit","float"),
+	("tension","float"),
 	("unknownFloatTwo","float"),#100
 	("unknownFloatThree","float"),#0
 	("unknownFloatFour","float"),#0.1
@@ -68,9 +68,9 @@ class ARecord(PyCStruct):
 	("lod","int"),])
     
     def construct(self,data):
+        data["fixedNegativeOne"] = [-1]*4
         data["oneZeroZeroZero1"] = [1,0,0,0]
         data["oneZeroZeroZero2"] = [1,0,0,0]
-        data["fixedNegativeOne"] = [-1]*4
         data["zeroFloat"] = 0.0
         super().construct(data)
         return self
@@ -82,9 +82,9 @@ class ARecord(PyCStruct):
             	"xGravity":"X-Axis Gravity",
             	"yGravity":"Y-Axis Gravity",
             	"zGravity":"Z-Axis Gravity",
-            	"xInertia":"Snapping",
-            	"yInertia":"Cone of Motion",
-            	"zInertia":"Tension",
+            	"snapping":"Snapping",
+            	"coneLimit":"Cone of Motion",
+            	"tension":"Tension",
             	"windMultiplier":"Wind Multiplier",
             	"lod":"Level of Detail",
             	"unknownFloatTwo":"{Unknown Float 00}",#100
@@ -113,10 +113,13 @@ class BRecord(PyCStruct):
 	("m33","float"),
 	("zeroSet1","byte[2]"),
 	("isChainParent","byte"),
-	("unknownByteSetTwo","byte[5]"),
+	("unknownByteSetTwo","ubyte[5]"),
 	("boneFunctionID","int"),
 	("zeroSet3","byte[4]"),
-	("unknownFloatSet","float[4]"),])
+    ("radius","float"),
+    ("unknownFloatSet","float[2]"),
+    ("oneFloat","float"),
+    ])
     
     def marshall(self, data):
         super().marshall(data)
@@ -126,15 +129,14 @@ class BRecord(PyCStruct):
          [self.m20, self.m21, self.m22, self.m23],
          [self.m30, self.m31, self.m23, self.m33],
          ])
-        self.Vector = Vector(self.unknownFloatSet)
         return self
     
     def construct(self, data):
         for i,j in [(i,j) for i in range(4) for j in range(4)]:
             data["m%d%d"%(i,j)] = data["Matrix"][i][j]
-        data["unknownFloatSet"] = list(data["Vector"])
         data["zeroSet1"] = [0,0]
         data["zeroSet3"] = [0,0,0,0] 
+        data["oneFloat"] = 1.0
         super().construct(data)
         return self
 #} brecord [ header.numBRecords ] }}
@@ -164,10 +166,6 @@ class Ctc():
         self.brecords = nodes
         return self
     def serialize(self):
-        for arecord in self.arecords:
-            for field in ARecord.fields:
-                print("%s: %s"%(field, str(arecord.__getattribute__(field))))
-            print()
         return self.Header.serialize()+ \
                     b''.join([arecord.serialize() for arecord in self.arecords])+ \
                     b''.join([brecord.serialize() for brecord in self.brecords])
@@ -192,7 +190,10 @@ if __name__ == "__main__":
         ctc = CtcFile(ctcf).data
         for chain in ctc:
             c = chain.chain
-
+            for node in chain:
+                print(node.Matrix[0,3])
+                if node.Matrix[0,3]!=0:
+                    print(ctcf)
 
     """
     uci = set()

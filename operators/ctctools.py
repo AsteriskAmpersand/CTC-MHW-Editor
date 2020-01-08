@@ -51,9 +51,9 @@ def createChain(col,w,ub,xg,yg,zg,xi,yi,zi,uf1,uf2,uf3,wm,lod):
     chain[chainProp["xGravity"]] = xg
     chain[chainProp["yGravity"]] = yg
     chain[chainProp["zGravity"]] = zg
-    chain[chainProp["xInertia"]] = xi
-    chain[chainProp["yInertia"]] = yi
-    chain[chainProp["zInertia"]] = zi
+    chain[chainProp["snapping"]] = xi
+    chain[chainProp["coneLimit"]] = yi
+    chain[chainProp["tension"]] = zi
     chain[chainProp["unknownFloatTwo"]] = uf1
     chain[chainProp["unknownFloatThree"]] = uf2
     chain[chainProp["unknownFloatFour"]] = uf3
@@ -61,7 +61,7 @@ def createChain(col,w,ub,xg,yg,zg,xi,yi,zi,uf1,uf2,uf3,wm,lod):
     chain[chainProp["lod"]] = lod
     return chain
 
-def createCTCNode(rootco,ubst = [0]*5,vec = Vector([0,0,0,1]),mat = Matrix.Identity(4)):
+def createCTCNode(rootco, rad = 1, ufst = [0.0,0.0], ubst = [0]*5,mat = Matrix.Identity(4)):
         o = bpy.data.objects.new("CtcNode", None )
         bpy.context.scene.objects.link( o )
         mod = o.constraints.new(type = "CHILD_OF")#name= "Bone Function"
@@ -69,13 +69,14 @@ def createCTCNode(rootco,ubst = [0]*5,vec = Vector([0,0,0,1]),mat = Matrix.Ident
         mod.target = rootco
         #mod.inverse_matrix = node.matrix #experiment into the meaning of the matrix
         o["Type"] = "CTC_Node"
-        o.empty_draw_size = .5
+        o.empty_draw_size = rad
         o.empty_draw_type = "SPHERE"
         o.show_x_ray = True
         o.show_bounds = False
         for i in range(5):
             o["UnknownByte%02d"%i] = ubst[i]
-        o["Vector"] = vec
+        for i in range(2):
+            o["UnknownFloat%02d"%i] = ufst[i]
         o["Matrix"] = mat
         return o
 
@@ -92,10 +93,14 @@ def getChild(candidate):
     try: next(generator)
     except: return w
     raise ValueError("Forked chain not under specification %s"%candidate.name)
+    
+def checkChildren(candidate):
+    getChild(candidate)
+    return True
 
 checkIsCTC = checkStarType("CTC")
-checkIsChain = lambda x: checkStarType("CTC_Chain")(x) and (getChild(x) or True)
-checkIsNode = lambda x: checkStarType("CTC_Node")(x) and (getChild(x) or True)
+checkIsChain = lambda x: checkStarType("CTC_Chain")(x) and checkChildren(x)
+checkIsNode = lambda x: checkStarType("CTC_Node")(x) and checkChildren(x)
 checkIsChainStart = lambda x:checkIsNode(x) and x.parent and checkIsChain(x.parent)
 checkIsChainEnd = lambda x:checkIsNode(x) and len([w for w in x.children if checkIsNode(w)]) == 0
 checkIsBone = lambda x: x.type == "EMPTY" and "boneFunction" in x
@@ -306,7 +311,7 @@ class chainFromSelection(bpy.types.Operator):
     def buildChain(self,selection, chainStart):
         parent = chainStart
         for bone in bpy.selection:
-            node = createCTCNode(bone,[0]*5,Vector([0,0,0,1]),Matrix.Identity(4))
+            node = createCTCNode(bone)
             node.parent = parent
             bpy.context.scene.update()
             node.constraints["Bone Function"].inverse_matrix = parent.matrix_world.inverted()
@@ -432,7 +437,7 @@ class reendChain(bpy.types.Operator):
         self.combineChain(chainRoot, rootBone)
         bpy.ops.ctc_tools.realign_chain()
         return {"FINISHED"}
-    
+"""   
 class changeNodeTarget(bpy.types.Operator):
     bl_idname = 'ctc_tools.change_target'
     bl_label = 'Change Bone Function'
@@ -441,7 +446,7 @@ class changeNodeTarget(bpy.types.Operator):
     
     boneID = IntProperty(name = "New Bone Function ID",
                             description = "Assign New Bone Function to Active",
-                            default = False)
+                            default = -1)
     def execute(self,context):
         active = bpy.context.active_object
         if not checkIsNode(active):
@@ -451,13 +456,14 @@ class changeNodeTarget(bpy.types.Operator):
         except:
             oldID = self.boneID
             self.boneID = 0
-            if oldID != 0:
+            if oldID != -1:
                 rootco = None
             else:
-                raise ValueError("Bone Function ID %d is not present in the skeleton."%self.oldID)
+                raise ValueError("Bone Function ID %d is not present in the skeleton."%oldID)
         active.constraints["Bone Function"].target = rootco
         bpy.ops.ctc_tools.realign_chain()
         return {"FINISHED"}
+"""
 
 class realignChain(bpy.types.Operator):
     bl_idname = 'ctc_tools.realign_chain'

@@ -24,15 +24,14 @@ from .operators.ctcexport import ExportCTC
 from .operators.cclexport import ExportCCL
 from .operators.ccltools import MeshFromCapsule,CapsuleFromSelection,DuplicateCapsule
 from .operators.ccltools import CopyCCLData, PasteCCLData, CCLTools
-from .operators.ctctools import (findDuplicates, realignChain, changeNodeTarget,
+from .operators.ctctools import (findDuplicates, realignChain, #changeNodeTarget,
                                  reendChain, restartChain, extendChain,
                                  createCTC, chainFromSelection)
 from .operators.ctctoolspanel import CTCTools
 from .operators.ctcmatrixtools import (get_all_matrices,set_all_matrices,
                                         get_rotation_matrices,set_rotation_matrices,
                                         get_translation_matrices,set_translation_matrices,
-                                        get_unknown_vector,set_unknown_vector,
-                                        get_unknown_bytes,set_unknown_bytes,
+                                        get_unknowns,set_unknowns,
                                         get_chain_data,set_chain_data)
 from .operators.ctcpreferences import CTCPrefs
 
@@ -48,14 +47,13 @@ classes = [Selection,
            MeshFromCapsule,CapsuleFromSelection,DuplicateCapsule,
            CopyCCLData, PasteCCLData,
            CCLTools,CTCTools,CTCPrefs,
-           findDuplicates, realignChain, changeNodeTarget,
+           findDuplicates, realignChain, #changeNodeTarget,
            reendChain, restartChain, extendChain,
            createCTC, chainFromSelection,
            get_all_matrices,set_all_matrices,
            get_rotation_matrices,set_rotation_matrices,
            get_translation_matrices,set_translation_matrices,
-           get_unknown_vector,set_unknown_vector,
-           get_unknown_bytes,set_unknown_bytes,
+           get_unknowns,set_unknowns,
            get_chain_data,set_chain_data,]
 importFunctions = [ccl_import,ctc_import] 
 exportFunctions = [ccl_export,ctc_export] 

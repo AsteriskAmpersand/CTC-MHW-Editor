@@ -14,6 +14,7 @@ from ..structures.Ctc import Ctc,Header,ARecord,BRecord
 from ..operators.ccltools import getCol
 from ..operators.ctctools import checkIsChain, checkIsNode, checkIsChainStart, checkIsCTC
 chainPropInverse = {value:key for key, value in ARecord.renameScheme.items()}
+accessScale = lambda scaleVector: scaleVector[0]
 
 class ExportCTC(Operator, ExportHelper):
     bl_idname = "custom_export.export_mhw_ctc"
@@ -21,7 +22,7 @@ class ExportCTC(Operator, ExportHelper):
     bl_options = {'REGISTER', 'PRESET', 'UNDO'}
  
     # ImportHelper mixin class uses this
-    filename_ext = ".ccl"
+    filename_ext = ".ctc"
     filter_glob = StringProperty(default="*.ctc", options={'HIDDEN'}, maxlen=255)
 
     missingFunctionBehaviour = EnumProperty(
@@ -64,7 +65,7 @@ class ExportCTC(Operator, ExportHelper):
         candidates = [obj for obj in file.children if checkIsChain(obj)]
         chains = []
         for chain in candidates:
-            arecord = {chainPropInverse[key]:chain[key] for key in chain.keys() if key in ARecord.fields}
+            arecord = {chainPropInverse[key]:chain[key] for key in chain.keys() if key in chainPropInverse}            
             #("unknownByteSet","byte[2]"),("unknownByteSetCont","byte[12]"),
             arecord["unknownByteSet"] = [chain["{Unknown Bytes %02d}"%i] for i in range(2)]
             arecord["unknownByteSetCont"]  = [chain["{Unknown Bytes %02d}"%i] for i in range(2,14)]
@@ -84,7 +85,8 @@ class ExportCTC(Operator, ExportHelper):
                 raise ValueError("Non-node object on chain %s"%currentNode.name)
             brecord = {key:currentNode[key] for key in currentNode.keys() if key in BRecord.fields}
             brecord["Matrix"] = Matrix(currentNode["Matrix"])
-            brecord["Vector"] = Vector(currentNode["Vector"])
+            brecord["radius"] = currentNode.empty_draw_size*accessScale(currentNode.matrix_world.to_scale())
+            brecord["unknownFloatSet"] = [currentNode["UnknownFloat%02d"%i] for i in range(2)]
             brecord["unknownByteSetTwo"] = [currentNode["UnknownByte%02d"%i] for i in range(5)]
             brecord["isChainParent"] = checkIsChain(parent)
             try: boneFunction = currentNode.constraints["Bone Function"].target["boneFunction"]
@@ -111,6 +113,7 @@ class ExportCTC(Operator, ExportHelper):
         arecords,chains = self.getChains(file)
         try: brecords = sum([self.chainToNodes(chain) for chain in chains],[])
         except: 
+            raise
             self.displayErrors(self.errors)
             return {'CANCELLED'}
         binfile = Ctc().construct(header,arecords,brecords).serialize()

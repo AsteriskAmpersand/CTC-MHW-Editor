@@ -58,9 +58,9 @@ class ImportCTC(Operator, ImportHelper):
                 chain.xGravity,
                 chain.yGravity,
                 chain.zGravity,
-                chain.xInertia,
-                chain.yInertia,
-                chain.zInertia,
+                chain.snapping,
+                chain.coneLimit,
+                chain.tension,
                 chain.unknownFloatTwo,
                 chain.unknownFloatThree,
                 chain.unknownFloatFour,
@@ -74,7 +74,7 @@ class ImportCTC(Operator, ImportHelper):
         except:
             rootco = None
             missingFunction = True
-        result = createCTCNode(rootco,node.unknownByteSetTwo,node.Vector,node.Matrix)
+        result = createCTCNode(rootco,node.radius,node.unknownFloatSet,node.unknownByteSetTwo,node.Matrix)
         
         if missingFunction:
             if self.missingFunctionBehaviour == "Abort":

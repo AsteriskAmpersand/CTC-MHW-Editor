@@ -42,7 +42,6 @@ class ctcChainBase(ctcBase):
 class ctcGet(ctcNodeBase):
     @classmethod
     def poll(cls, context):
-        # Exactly one vertex or face must be selected.
         selection = context.selected_objects
         return (
             super().poll(context) and
@@ -75,7 +74,9 @@ class get_all_matrices(ctcGet):
     def getProperty(self,obj):
         self.addon.preferences.rotation_buffer = Matrix(obj["Matrix"]).to_euler()
         self.addon.preferences.translation_buffer = Matrix(obj["Matrix"]).to_translation()
-        self.addon.preferences.unknown_vector_buffer = Vector(obj["Vector"]).to_3d()
+        self.addon.preferences.unknown_floats_buffer = [obj["UnknownFloat%02d"%i] for i in range(2)]
+        self.addon.preferences.unknown_bytes_buffer_l = [obj["UnknownByte%02d"%i] for i in range(3)]
+        self.addon.preferences.unknown_bytes_buffer_r = [obj["UnknownByte%02d"%i] for i in range(3,5)]
         self.addon.preferences.unknown_bytes_buffer = [obj["UnknownByte%02d"%i] for i in range(5)]
         return {key:obj[key] for key in obj.keys()}
     
@@ -124,45 +125,50 @@ class set_translation_matrices(ctcSet):
     buffer = 'translation_buffer'
     @staticmethod
     def setProperty(obj,value):
-        obj["Matrix"] = Matrix.Translation(value) * Matrix.Rotation(Matrix(obj["Matrix"]).to_rotation())
+        rot = Matrix(obj["Matrix"]) - Matrix.Translation(Matrix(obj["Matrix"]).to_translation())
+        puretrans = Matrix.Translation(value) - Matrix.Identity(4)
+        obj["Matrix"] =  rot + puretrans
         
-class get_unknown_vector(ctcGet):
-    bl_idname = 'ctc_tools.get_unknown_vector'
-    bl_label = 'Get Node Unknown Vector'
-    bl_description = 'Copy selected node unknown vector.'
-    buffer = 'unknown_vector_buffer'
+class get_unknowns(ctcGet):
+    bl_idname = 'ctc_tools.get_unknowns'
+    bl_label = 'Get Node Unknowns'
+    bl_description = 'Copy selected node unknowns.'
+    bytebuffer = 'unknown_bytes_buffer'
+    floatbuffer = 'unknown_floats_buffer'
+    def core_operator(self, context):
+        prop = self.getByteProperty(context.active_object)
+        l,r = prop[:3],prop[3:5]
+        self.addon.preferences.__setattr__(self.bytebuffer+"_l",l)
+        self.addon.preferences.__setattr__(self.bytebuffer+"_r",r)
+        self.addon.preferences.__setattr__(self.bytebuffer,prop)
+        self.addon.preferences.__setattr__(self.floatbuffer,self.getFloatProperty(context.active_object))
+        return {'FINISHED'}
     @staticmethod
-    def getProperty(obj):
-        return Vector(obj["Vector"]).to_3d()
-       
-class set_unknown_vector(ctcSet):
-    bl_idname = 'ctc_tools.set_unknown_vector'
-    bl_label = 'Set Node Unknown Vector'
-    bl_description = 'Paste selected node unknown vector.'
-    buffer = 'unknown_vector_buffer'
-    @staticmethod
-    def setProperty(obj,value):
-        obj["Vector"] = Vector(value).to_4d()
-    
-class get_unknown_bytes(ctcGet):
-    bl_idname = 'ctc_tools.get_unknown_bytes'
-    bl_label = 'Get Node Unknown Bytes'
-    bl_description = 'Copy selected node unknown bytes.'
-    buffer = 'unknown_bytes_buffer'
-    @staticmethod
-    def getProperty(obj):
+    def getByteProperty(obj):
         return [obj["UnknownByte%02d"%i] for i in range(5)]
+    @staticmethod
+    def getFloatProperty(obj):
+        return [obj["UnknownFloat%02d"%i] for i in range(2)]
       
-class set_unknown_bytes(ctcSet):
-    bl_idname = 'ctc_tools.set_unknown_bytes'
+class set_unknowns(ctcSet):
+    bl_idname = 'ctc_tools.set_unknowns'
     bl_label = 'Set Node Unknown Bytes'
     bl_description = 'Paste selected node unknown bytes.'
-    buffer = 'unknown_bytes_buffer'
+    bytebuffer = 'unknown_bytes_buffer'
+    floatbuffer = 'unknown_floats_buffer'
+    def core_operator(self, context):
+        for obj in context.selected_objects:
+            self.setProperty(obj, 
+                             self.addon.preferences.__getattribute__(self.bytebuffer),
+                             self.addon.preferences.__getattribute__(self.floatbuffer))
+        return {'FINISHED'}    
     @staticmethod
-    def setProperty(obj,value):
+    def setProperty(obj,bytevalue,floatvalue):
         for i in range(5):
-            obj["UnknownByte%02d"%i] = value[i]
-        
+            obj["UnknownByte%02d"%i] = bytevalue[i]
+        for i in range(2):
+            obj["UnknownFloat%02d"%i] = floatvalue[i]      
+            
 class get_chain_data(ctcChainBase):
     bl_idname = 'ctc_tools.get_chain_data'
     bl_label = 'Get Chain Data'
