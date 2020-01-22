@@ -118,7 +118,7 @@ class BRecord(PyCStruct):
 	("zeroSet3","byte[4]"),
     ("radius","float"),
     ("unknownFloatSet","float[2]"),
-    ("oneFloat","float"),
+    ("oneFloat","float[2]"),
     ("unknownExtendedByteSet","byte[12]")
     ])
     
@@ -137,7 +137,8 @@ class BRecord(PyCStruct):
             data["m%d%d"%(i,j)] = data["Matrix"][i][j]
         data["zeroSet1"] = [0,0]
         data["zeroSet3"] = [0,0,0,0] 
-        data["oneFloat"] = 1.0
+        data["oneFloat"] = [1.0,1.0]
+        data["unknownExtendedByteSet"] = [-51]*12
         super().construct(data)
         return self
 #} brecord [ header.numBRecords ] }}
@@ -176,7 +177,7 @@ CtcFile = FileClass(Ctc)
 
 if __name__ == "__main__":
     from pathlib import Path
-    
+    uf = set()
     def norm(v):
         return np.sqrt(v[0]**2+v[1]**2+v[2]**2)
 
@@ -187,14 +188,13 @@ if __name__ == "__main__":
             dictionary[key]=[data]
         return dictionary
     
-    for ctcf in Path(r"E:\MHW\Merged").rglob("*.ctc"):
+    for ctcf in Path(r"E:\MHW\ChunkG0").rglob("*.ctc"):
         ctc = CtcFile(ctcf).data
         for chain in ctc:
             c = chain.chain
             for node in chain:
-                print(node.Matrix[0,3])
-                if node.Matrix[0,3]!=0:
-                    print(ctcf)
+                uf.add(tuple(node.unknownExtendedByteSet))
+    print(uf)
 
     """
     uci = set()
