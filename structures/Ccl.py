@@ -44,7 +44,7 @@ class CCLRecords(PyCStruct):
 	("endsphere_yOffset", "float"),
 	("endsphere_zOffset", "float"),
 	("endsphere_radius", "float"),
-   ("endZeroes", "byte[12]"),
+    ("endZeroes", "byte[12]"),
 	("unknownEndBytes", "ubyte[4]"),
     ])
     

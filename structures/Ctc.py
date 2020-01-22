@@ -119,6 +119,7 @@ class BRecord(PyCStruct):
     ("radius","float"),
     ("unknownFloatSet","float[2]"),
     ("oneFloat","float"),
+    ("unknownExtendedByteSet","byte[12]")
     ])
     
     def marshall(self, data):
