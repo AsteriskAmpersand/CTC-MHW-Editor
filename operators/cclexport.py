@@ -80,12 +80,12 @@ class ExportCCL(Operator, ExportHelper):
         return CCLRecords().construct(data)
     
     @staticmethod
-    def getCapsuleMatrices(capsule):
+    def getCapsuleScales(capsule):
         s1,s2 = ExportCCL.getSpheres(capsule)
         return (accessScale(s1.matrix_world.to_scale())*s1.empty_draw_size, 
                 accessScale(s2.matrix_world.to_scale())*s2.empty_draw_size)
     @staticmethod
-    def getCapsuleScales(capsule):
+    def getCapsuleMatrices(capsule):
         s1,s2 = ExportCCL.getSpheres(capsule)
         return s1.matrix_basis, s2.matrix_basis    
 
