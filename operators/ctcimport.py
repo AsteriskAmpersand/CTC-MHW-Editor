@@ -153,7 +153,7 @@ class ImportCTC(Operator, ImportHelper):
             ctcchain = self.createRecordChain(chain)
             ctcchain.parent = ctchead
             if self.Abort:
-                self.cleanup(header)
+                self.cleanup(ctchead)
                 break
         bpy.context.scene.update()
         self.displayErrors('\r\n'.join(self.ErrorMessages))
