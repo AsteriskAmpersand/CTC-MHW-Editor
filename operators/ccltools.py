@@ -12,6 +12,16 @@ from mathutils import Vector, Matrix
 from ..structures.Ccl import CclFile
 import bmesh
 
+def checkIsStarType(candidateStarType):
+    return candidateStarType.type == "EMPTY" and "Type" in candidateStarType
+    
+def checkStarType(typing):
+    return lambda x: checkIsStarType(x) and x["Type"]==typing
+
+def checkSubStarType(typing):
+    return lambda x: checkIsStarType(x) and typing in x["Type"]
+
+checkIsSubCCL = checkSubStarType("CCL")
 
 def getCol(matrix, column):
     return [matrix[i][column] for i in range(len(matrix))]
@@ -169,6 +179,10 @@ class CCLTools(bpy.types.Panel):
         col = self.layout.column(align = True)
         col.operator('ccl_tools.copy_data', text="Copy Unknowns")
         col.operator('ccl_tools.paste_data', text="Paste Unknowns")
+        col = self.layout.column(align = True)
+        row = col.row(align = True)
+        row.operator('ccl_tools.hide_ccl', icon='VISIBLE_IPO_OFF',text = 'Hide')
+        row.operator('ccl_tools.show_ccl', icon='VISIBLE_IPO_ON',text = 'Show')
 
 class CapsuleFromSelection(bpy.types.Operator):
     bl_idname = 'ccl_tools.capsule_from_selection'
@@ -253,4 +267,26 @@ class PasteCCLData(bpy.types.Operator):
         if copyBuffer == None:
             raise ValueError("Nothing on copy buffer")
         capsule["Data"] = list(copyBuffer).copy()
+        return {"FINISHED"}
+
+class hideCCL(bpy.types.Operator):
+    bl_idname = 'ccl_tools.hide_ccl'
+    bl_label = 'Hide CCL Structures'
+    bl_description = 'Hides all structures related to CCLs'
+    bl_options = {"REGISTER", "UNDO"}
+    def execute(self,context):
+        for empty in [obj for obj in bpy.context.scene.objects 
+                      if obj.type == "EMPTY" and checkIsSubCCL(obj)]:
+            empty.hide = True
+        return {"FINISHED"}
+
+class showCCL(bpy.types.Operator):
+    bl_idname = 'ccl_tools.show_ccl'
+    bl_label = 'Show CCL Structures'
+    bl_description = 'Show all structures related to CCLs'
+    bl_options = {"REGISTER", "UNDO"}
+    def execute(self,context):
+        for empty in [obj for obj in bpy.context.scene.objects 
+                      if obj.type == "EMPTY" and checkIsSubCCL(obj)]:
+            empty.hide = False
         return {"FINISHED"}

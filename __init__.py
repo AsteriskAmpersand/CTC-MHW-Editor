@@ -23,16 +23,17 @@ from .operators.cclimport import ImportCCL
 from .operators.ctcexport import ExportCTC
 from .operators.cclexport import ExportCCL
 from .operators.ccltools import MeshFromCapsule,CapsuleFromSelection,DuplicateCapsule
-from .operators.ccltools import CopyCCLData, PasteCCLData, CCLTools
+from .operators.ccltools import CopyCCLData, PasteCCLData, CCLTools, hideCCL, showCCL
 from .operators.ctctools import (findDuplicates, realignChain, #changeNodeTarget,
                                  reendChain, restartChain, extendChain,
-                                 createCTC, chainFromSelection)
+                                 createCTC, chainFromSelection,
+                                 hideCTC, showCTC,)
 from .operators.ctctoolspanel import CTCTools
 from .operators.ctcmatrixtools import (get_all_matrices,set_all_matrices,
                                         get_rotation_matrices,set_rotation_matrices,
                                         get_translation_matrices,set_translation_matrices,
                                         get_unknowns,set_unknowns,
-                                        get_chain_data,set_chain_data)
+                                        get_chain_data,set_chain_data,)
 from .operators.ctcpreferences import CTCPrefs
 
 from .operators.ctcimport import menu_func_import as ctc_import
@@ -50,11 +51,13 @@ classes = [Selection,
            findDuplicates, realignChain, #changeNodeTarget,
            reendChain, restartChain, extendChain,
            createCTC, chainFromSelection,
+           hideCTC, showCTC,
            get_all_matrices,set_all_matrices,
            get_rotation_matrices,set_rotation_matrices,
            get_translation_matrices,set_translation_matrices,
            get_unknowns,set_unknowns,
-           get_chain_data,set_chain_data,]
+           get_chain_data,set_chain_data,
+           hideCCL, showCCL,]
 importFunctions = [ccl_import,ctc_import] 
 exportFunctions = [ccl_export,ctc_export] 
 

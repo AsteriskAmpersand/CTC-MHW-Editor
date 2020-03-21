@@ -107,7 +107,8 @@ class set_rotation_matrices(ctcSet):
     buffer = 'rotation_buffer'
     @staticmethod
     def setProperty(obj,value):
-        obj["Matrix"] = Matrix.Translation(Matrix(obj["Matrix"]).to_translation() )*Matrix.Rotation(value)
+        print(value)
+        obj["Matrix"] = Matrix.Translation(Matrix(obj["Matrix"]).to_translation() )*value.to_matrix().to_4x4()
         
 class get_translation_matrices(ctcGet):
     bl_idname = 'ctc_tools.get_translation_matrices'
@@ -138,10 +139,10 @@ class get_unknowns(ctcGet):
     def core_operator(self, context):
         prop = self.getByteProperty(context.active_object)
         l,r = prop[:3],prop[3:5]
-        self.addon.preferences.__setattr__(self.bytebuffer+"_l",l)
-        self.addon.preferences.__setattr__(self.bytebuffer+"_r",r)
-        self.addon.preferences.__setattr__(self.bytebuffer,prop)
-        self.addon.preferences.__setattr__(self.floatbuffer,self.getFloatProperty(context.active_object))
+        for ix,v in enumerate(l):self.addon.preferences.__getattribute__(self.bytebuffer+"_l")[ix] = v
+        for ix,v in enumerate(r):self.addon.preferences.__getattribute__(self.bytebuffer+"_r")[ix] = v
+        for ix,v in enumerate(self.getFloatProperty(context.active_object)):
+            self.addon.preferences.__getattribute__(self.floatbuffer)[ix] = v
         return {'FINISHED'}
     @staticmethod
     def getByteProperty(obj):
@@ -159,7 +160,8 @@ class set_unknowns(ctcSet):
     def core_operator(self, context):
         for obj in context.selected_objects:
             self.setProperty(obj, 
-                             self.addon.preferences.__getattribute__(self.bytebuffer),
+                             list(self.addon.preferences.__getattribute__(self.bytebuffer+"_l"))+
+                             list(self.addon.preferences.__getattribute__(self.bytebuffer+"_r")),
                              self.addon.preferences.__getattribute__(self.floatbuffer))
         return {'FINISHED'}    
     @staticmethod

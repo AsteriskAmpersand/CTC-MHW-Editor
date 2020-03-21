@@ -86,3 +86,7 @@ class CTCTools(bpy.types.Panel):
         col.operator("ctc_tools.reend_chain", icon='CONSTRAINT_DATA', text="Re-End Chain")  
         col.operator("ctc_tools.realign_chain", icon='MOD_MESHDEFORM', text="Realign Chains with Target")
         col.operator("ctc_tools.find_duplicates", icon='MOD_MESHDEFORM', text="Find Duplicate IDs")  
+        col = layout.column(align = True)
+        row = col.row(align = True)
+        row.operator('ctc_tools.hide_ctc', icon='VISIBLE_IPO_OFF',text = 'Hide')
+        row.operator('ctc_tools.show_ctc', icon='VISIBLE_IPO_ON',text = 'Show')

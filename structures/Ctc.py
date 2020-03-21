@@ -87,9 +87,9 @@ class ARecord(PyCStruct):
             	"tension":"Tension",
             	"windMultiplier":"Wind Multiplier",
             	"lod":"Level of Detail",
-            	"unknownFloatTwo":"{Unknown Float 00}",#100
-            	"unknownFloatThree":"{Unknown Float 01}",#0
-            	"unknownFloatFour":"{Unknown Float 02}"                
+            	"unknownFloatTwo":"{Unknown Float 00}",#100 Normally
+            	"unknownFloatThree":"{Unknown Float 01}",#0 Normally
+            	"unknownFloatFour":"{Unknown Float 02}"#0.1 Normally
             }
     
 #} arecord [ header.numARecords ] 
@@ -111,15 +111,15 @@ class BRecord(PyCStruct):
 	("m13","float"),
 	("m23","float"),
 	("m33","float"),
-	("zeroSet1","byte[2]"),
+	("zeroSet1","byte[2]"),#0/54,0
 	("isChainParent","byte"),
 	("unknownByteSetTwo","ubyte[5]"),
 	("boneFunctionID","int"),
 	("zeroSet3","byte[4]"),
     ("radius","float"),
     ("unknownFloatSet","float[2]"),
-    ("oneFloat","float[2]"),
-    ("unknownExtendedByteSet","byte[12]")
+    ("oneFloat","float[2]"),#FLOAT,1
+    ("unknownExtendedByteSet","byte[12]")#-51 all the way
     ])
     
     def marshall(self, data):
@@ -177,7 +177,13 @@ CtcFile = FileClass(Ctc)
 
 if __name__ == "__main__":
     from pathlib import Path
-    uf = set()
+    checks = {"fixedBytes":set()}
+    acheck = {"unknownFloatTwo":set(),"unknownFloatThree":set(),"unknownFloatFour":set(),
+              "unknownByteSet":set(),"fixedNegativeOne":set(),"oneZeroZeroZero1":set(),
+              "oneZeroZeroZero2":set(),"coneLimit":set()}
+    bcheck = {"unknownFloatSet":set(),
+              "m03":set(),"m13":set(),"m23":set(),"m33":set(),
+            "zeroSet1":set(),"zeroSet3":set(),"oneFloat":set(),"unknownExtendedByteSet":set()}
     def norm(v):
         return np.sqrt(v[0]**2+v[1]**2+v[2]**2)
 
@@ -187,15 +193,31 @@ if __name__ == "__main__":
         else:
             dictionary[key]=[data]
         return dictionary
-    
+    def tryTuple(obj):
+        try:
+            return tuple(obj)
+        except:
+            return obj
     for ctcf in Path(r"E:\MHW\ChunkG0").rglob("*.ctc"):
         ctc = CtcFile(ctcf).data
+        for c in checks:
+            checks[c].add(tryTuple(getattr(ctc.Header,c)))
         for chain in ctc:
             c = chain.chain
+            for a in acheck:
+                acheck[a].add(tryTuple(getattr(c,a)))
             for node in chain:
-                uf.add(tuple(node.unknownExtendedByteSet))
-    print(uf)
-
+                for b in bcheck:
+                    bcheck[b].add(tryTuple(getattr(node,b)))
+    for c in checks:
+        print(c)
+        print(checks[c])
+    for c in acheck:
+        print(c)
+        print(acheck[c])
+    for c in bcheck:
+        print(c)
+        print(bcheck[c])
     """
     uci = set()
     ui = set()

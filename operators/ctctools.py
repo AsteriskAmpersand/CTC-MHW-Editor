@@ -13,7 +13,7 @@ selection_utils.selected #selection in order
 import bpy
 from mathutils import Vector, Matrix
 from bpy.props import IntProperty, StringProperty, BoolProperty, EnumProperty, FloatProperty
-from ..operators.ccltools import findFunction
+from ..operators.ccltools import findFunction,checkSubStarType,checkStarType,checkIsStarType
 from ..structures.Ctc import ARecord
 chainProp = ARecord.renameScheme
 
@@ -80,12 +80,6 @@ def createCTCNode(rootco, rad = 1, ufst = [0.0,0.0], ubst = [0]*5,mat = Matrix.I
         o["Matrix"] = mat
         return o
 
-def checkIsStarType(candidateStarType):
-    return candidateStarType.type == "EMPTY" and "Type" in candidateStarType
-    
-def checkStarType(typing):
-    return lambda x: checkIsStarType(x) and x["Type"]==typing
-
 def getChild(candidate):
     generator = (c for c in candidate.children if checkStarType("CTC_Node")(c))
     try: w = next(generator)
@@ -98,6 +92,7 @@ def checkChildren(candidate):
     getChild(candidate)
     return True
 
+checkIsSubCTC = checkSubStarType("CTC")
 checkIsCTC = checkStarType("CTC")
 checkIsChain = lambda x: checkStarType("CTC_Chain")(x) and checkChildren(x)
 checkIsNode = lambda x: checkStarType("CTC_Node")(x) and checkChildren(x)
@@ -513,3 +508,24 @@ class findDuplicates(bpy.types.Operator):
                     print("\t\t%s -> %s"%(n,b))            
         return {"FINISHED"}
     
+class hideCTC(bpy.types.Operator):
+    bl_idname = 'ctc_tools.hide_ctc'
+    bl_label = 'Hide CTC Structures'
+    bl_description = 'Hides all structures related to CTCs'
+    bl_options = {"REGISTER", "UNDO"}
+    def execute(self,context):
+        for empty in [obj for obj in bpy.context.scene.objects 
+                      if obj.type == "EMPTY" and checkIsSubCTC(obj)]:
+            empty.hide = True
+        return {"FINISHED"}
+
+class showCTC(bpy.types.Operator):
+    bl_idname = 'ctc_tools.show_ctc'
+    bl_label = 'Show CTC Structures'
+    bl_description = 'Show all structures related to CTCs'
+    bl_options = {"REGISTER", "UNDO"}
+    def execute(self,context):
+        for empty in [obj for obj in bpy.context.scene.objects 
+                      if obj.type == "EMPTY" and checkIsSubCTC(obj)]:
+            empty.hide = False
+        return {"FINISHED"}
