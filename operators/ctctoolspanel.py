@@ -29,14 +29,14 @@ class CTCTools(bpy.types.Panel):
         
     def draw_edit_matrixes(self, context, layout):
         addon_props = self.addon_props
-
+        """
         self.layout.label("Node Linear Structures")
         col = layout.column(align = True)
         row = col.row(align = True)
         row.operator('ctc_tools.get_all_matrices', text = 'Get')
         row.operator('ctc_tools.set_all_matrices', text = 'Set')
         #col.prop(addon_props, 'matrices_buffer', text = '')
-        
+        """
         self.layout.label("Rotation Matrix")
         col0 = layout.column(align = True)
         row0 = col0.row(align = True)
@@ -50,7 +50,7 @@ class CTCTools(bpy.types.Panel):
         row1.operator('ctc_tools.get_translation_matrices', text = 'Get')
         row1.operator('ctc_tools.set_translation_matrices', text = 'Set')
         col1.prop(addon_props, 'translation_buffer', text = '')
-        
+        """
         self.layout.label("Unknown Values")
         col2 = layout.column(align = True)
         row2 = col2.row(align = True)        
@@ -75,17 +75,19 @@ class CTCTools(bpy.types.Panel):
         row.operator('ctc_tools.get_chain_data', text = 'Get')
         row.operator('ctc_tools.set_chain_data', text = 'Set')
         #col2.prop(addon_props, 'chain_buffer', text = '')
+        """
         
     def draw_create_tools(self, context, layout):
         col = layout.column(align = True)
-        col.operator("ctc_tools.create_ctc", icon='MOD_MESHDEFORM', text="Create CTC File")
-        col.operator("ctc_tools.chain_from_selection", icon='CONSTRAINT_DATA', text="Chain from Selection")
-        col.operator("ctc_tools.extend_chain", icon='CONSTRAINT_DATA', text="Extend Chain")
-        #col.operator("ctc_tools.change_target", icon='CONSTRAINT_DATA', text="Change Target")
+        #col.operator("ctc_tools.create_ctc", icon='MOD_MESHDEFORM', text="Create CTC File")
+        #col.operator("ctc_tools.chain_from_selection", icon='CONSTRAINT_DATA', text="Chain from Selection")
+        #col.operator("ctc_tools.extend_chain", icon='CONSTRAINT_DATA', text="Extend Chain")
+        ##col.operator("ctc_tools.change_target", icon='CONSTRAINT_DATA', text="Change Target")
         col.operator("ctc_tools.restart_chain", icon='CONSTRAINT_DATA', text="Restart Chain")
         col.operator("ctc_tools.reend_chain", icon='CONSTRAINT_DATA', text="Re-End Chain")  
         col.operator("ctc_tools.realign_chain", icon='MOD_MESHDEFORM', text="Realign Chains with Target")
-        col.operator("ctc_tools.find_duplicates", icon='MOD_MESHDEFORM', text="Find Duplicate IDs")  
+        col.operator("ctc_tools.find_duplicates", icon='MOD_MESHDEFORM', text="Find Duplicate IDs")
+        
         col = layout.column(align = True)
         row = col.row(align = True)
         row.operator('ctc_tools.hide_ctc', icon='VISIBLE_IPO_OFF',text = 'Hide')

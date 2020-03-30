@@ -8,7 +8,7 @@ import bpy
 from bpy_extras.io_utils import ImportHelper
 from bpy.props import StringProperty, BoolProperty, EnumProperty
 from bpy.types import Operator
-from ..structures.Ctc import CtcFile
+from ..structures.Ctc import CtcFile, Header, ARecord, BRecord
 from ..operators.ccltools import findFunction
 from ..operators.ctctools import createCTCHeader, createChain, createCTCNode
 
@@ -37,36 +37,23 @@ class ImportCTC(Operator, ImportHelper):
             )    
     
     @staticmethod
+    def breakObj(obj,clss):
+        return [(obj.renameScheme[prop] if hasattr(obj,"renameScheme") and prop in obj.renameScheme else prop,
+                 getattr(obj,prop))
+                for prop in clss.fields]# if prop not in clss.hide
+    
+    @staticmethod
     def breakHeader(header):
-        return (header.unknownsConstantIntSet,
-                header.unknownConstantInt,
-                header.updateTicks,
-                header.poseSnapping,
-                header.chainDamping,
-                header.reactionSpeed,
-                header.gravityMult,
-                header.windMultMid,
-                header.windMultLow,
-                header.windMultHigh,
-                header.unknownFloatSet)
+        return ImportCTC.breakObj(header,Header)
         
     @staticmethod
     def breakChainHeader(chain):
-        return (chain.collision,
-                chain.weightiness,
-                chain.unknownByteSet + chain.unknownByteSetCont,
-                chain.xGravity,
-                chain.yGravity,
-                chain.zGravity,
-                chain.snapping,
-                chain.coneLimit,
-                chain.tension,
-                chain.unknownFloatTwo,
-                chain.unknownFloatThree,
-                chain.unknownFloatFour,
-                chain.windMultiplier,
-                chain.lod)
+        return ImportCTC.breakObj(chain,ARecord)
         
+    @staticmethod
+    def breakNode(node):
+        return ImportCTC.breakObj(node,BRecord)
+    
     def createRecordNode(self, node):
         missingFunction = False
         try:
@@ -74,7 +61,7 @@ class ImportCTC(Operator, ImportHelper):
         except:
             rootco = None
             missingFunction = True
-        result = createCTCNode(rootco,node.radius,node.unknownFloatSet,node.unknownByteSetTwo,node.Matrix)
+        result = createCTCNode(rootco,node.radius,node.Matrix,*ImportCTC.breakNode(node))
         
         if missingFunction:
             if self.missingFunctionBehaviour == "Abort":
@@ -96,7 +83,9 @@ class ImportCTC(Operator, ImportHelper):
                 node = self.createRecordNode(node)
                 node.parent = parent
                 bpy.context.scene.update()
-                node.constraints["Bone Function"].inverse_matrix = parent.matrix_world.inverted()
+                if node["Fixed End"]:
+                    node.constraints["Bone Function"].inverse_matrix = parent.matrix_world.inverted()
+                bpy.context.scene.update()
                 parent = node
             except BoneFunctionError:
                 break

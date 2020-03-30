@@ -35,13 +35,36 @@ class Header(PyCStruct):
 	("windMultLow","float"),
 	("windMultHigh","float"),
 	("unknownFloatSet","float[3]"),
-	("fixedBytes","byte[8]"),])#1 1 1 1 1 1 0 0
+	("fixedBytes","byte[6]"),
+    ("cursedBytes","byte[2]"),#0 0 #1 0
+    ])
+    hide = ["filetype","numARecords","numBRecords","fixedBytes"]
     
     def construct(self,data):
         data["filetype"]="CTC\x00"
-        data["fixedBytes"]=[1,1,1,1,1,1,0,0]
+        #data["fixedBytes"]=[1,1,1,1,1,1,0,0]
+        print(data)
         super().construct(data)
         return self
+    
+    renameScheme = {
+            "updateTicks":"Update Frequency (frames)",
+            "gravityMult":"Gravity Multiplier",
+            "reactionSpeed":"Reaction Speed",
+            "chainDamping":"Dampening",
+            "windMultLow":"Low Wind Effect",
+            "windMultMid":"Medium Wind Effect",
+            "windMultHigh":"Strong Wind Effect",
+            "unknownsConstantIntSet":"{Unknown Int Set 1}:",
+            "unknownConstantInt":"{Unknown Int Set 2}:",
+            "unknownFloatSet":"{Unknown Float Set 1}:",
+            "fixedBytes":"{Cursed Fixed Bytes}:",
+            "cursedBytes":"{Cursed Non Fixed Bytes}:",
+            "numARecords":"{A Record Count}:",
+            "numBRecords":"{B Record Count}:",
+            "filetype":"{Filetype}:",            
+            }
+    reverseScheme = {value:key for key, value in renameScheme.items()}
 #} header 
 
 class ARecord(PyCStruct):
@@ -50,10 +73,10 @@ class ARecord(PyCStruct):
 	("collision","byte"),
 	("weightiness","byte"),
 	("unknownByteSet","byte[2]"),
-    ("fixedNegativeOne","byte[4]"),
-    ("oneZeroZeroZero1","byte[4]"),
-    ("oneZeroZeroZero2","byte[4]"),
-    ("unknownByteSetCont","byte[12]"),
+    ("fixedNegativeOne","byte[4]"),#-1,-1,-1,-1
+    ("oneZeroZeroZero1","byte[4]"),#1,0,0,0
+    ("oneZeroZeroZero2","byte[4]"),#1,0,0,0
+    ("unknownByteSetCont","byte[12]"),#[-51]*12
 	("xGravity","float"),
 	("yGravity","float"),
 	("zGravity","float"),
@@ -61,17 +84,19 @@ class ARecord(PyCStruct):
 	("snapping","float"),
 	("coneLimit","float"),
 	("tension","float"),
-	("unknownFloatTwo","float"),#100
-	("unknownFloatThree","float"),#0
-	("unknownFloatFour","float"),#0.1
+	("unknownFloatTwo","float"),#100 Usually
+	("unknownFloatThree","float"),#0 Usually
+	("unknownFloatFour","float"),#0.1 Usually
 	("windMultiplier","float"),
 	("lod","int"),])
+    hide = ["fixedNegativeOne","oneZeroZeroZero1","oneZeroZeroZero2","unknownByteSetCont"]
     
     def construct(self,data):
-        data["fixedNegativeOne"] = [-1]*4
-        data["oneZeroZeroZero1"] = [1,0,0,0]
-        data["oneZeroZeroZero2"] = [1,0,0,0]
-        data["zeroFloat"] = 0.0
+        #data["fixedNegativeOne"] = [-1]*4
+        #data["oneZeroZeroZero1"] = [1,0,0,0]
+        #data["oneZeroZeroZero2"] = [1,0,0,0]
+        #data["zeroFloat"] = 0.0
+        print(data)
         super().construct(data)
         return self
     
@@ -82,15 +107,22 @@ class ARecord(PyCStruct):
             	"xGravity":"X-Axis Gravity",
             	"yGravity":"Y-Axis Gravity",
             	"zGravity":"Z-Axis Gravity",
+                "fixedNegativeOne":"{Fixed Set -1}:",
+                "unknownByteSet":"{Fixed Set 0}:",
+                "oneZeroZeroZero1":"{Fixed Set 1}:",
+                "oneZeroZeroZero2":"{Fixed Set 2}:",
+                "unknownByteSetCont":"{Fixed Set 3}:",
             	"snapping":"Snapping",
             	"coneLimit":"Cone of Motion",
             	"tension":"Tension",
             	"windMultiplier":"Wind Multiplier",
             	"lod":"Level of Detail",
+                "zeroFloat":"{Zero Float}",
             	"unknownFloatTwo":"{Unknown Float 00}",#100 Normally
             	"unknownFloatThree":"{Unknown Float 01}",#0 Normally
             	"unknownFloatFour":"{Unknown Float 02}"#0.1 Normally
             }
+    reverseScheme = {value:key for key, value in renameScheme.items()}
     
 #} arecord [ header.numARecords ] 
 class BRecord(PyCStruct):
@@ -111,16 +143,27 @@ class BRecord(PyCStruct):
 	("m13","float"),
 	("m23","float"),
 	("m33","float"),
-	("zeroSet1","byte[2]"),#0/54,0
-	("isChainParent","byte"),
+	("zeroSet1","byte[2]"),#0,0
+	("fixedEnd","byte"),
 	("unknownByteSetTwo","ubyte[5]"),
 	("boneFunctionID","int"),
-	("zeroSet3","byte[4]"),
+    ("unknown50","byte"),#0,54,55,56,57,58,59
+	("zeroSet3","byte[3]"),#0,0,0
     ("radius","float"),
-    ("unknownFloatSet","float[2]"),
-    ("oneFloat","float[2]"),#FLOAT,1
+    ("unknownFloatSet","float[3]"),
+    ("oneFloat","float"),#1
     ("unknownExtendedByteSet","byte[12]")#-51 all the way
     ])
+    
+    hide = ["m00","m01","m02","m03", "m10","m11","m12","m13",
+            "m20","m21","m22","m23", "m30","m31","m32","m33",
+            "zeroSet1","zeroSet3","oneFloat","unknownExtendedByteSet"]
+    
+    renameScheme = {
+            **{h:"{%s}:"%(str(h)) for h in hide},
+            "fixedEnd":"Fixed End",            
+            }            
+    reverseScheme = {value:key for key, value in renameScheme.items()}
     
     def marshall(self, data):
         super().marshall(data)
@@ -135,10 +178,11 @@ class BRecord(PyCStruct):
     def construct(self, data):
         for i,j in [(i,j) for i in range(4) for j in range(4)]:
             data["m%d%d"%(i,j)] = data["Matrix"][i][j]
-        data["zeroSet1"] = [0,0]
-        data["zeroSet3"] = [0,0,0,0] 
-        data["oneFloat"] = [1.0,1.0]
-        data["unknownExtendedByteSet"] = [-51]*12
+        #data["zeroSet1"] = [0,0]
+        #data["zeroSet3"] = [0,0,0] 
+        #data["oneFloat"] = 1.0
+        #data["unknownExtendedByteSet"] = [-51]*12
+        print(data)
         super().construct(data)
         return self
 #} brecord [ header.numBRecords ] }}
@@ -175,15 +219,25 @@ class Ctc():
         return iter(self.Chains)
 CtcFile = FileClass(Ctc)
 
+def ifIn(key,val,dictList):
+    if key not in dictList:
+        dictList[key]=[]
+    dictList[key].append(val)
+    return
+
 if __name__ == "__main__":
     from pathlib import Path
-    checks = {"fixedBytes":set()}
-    acheck = {"unknownFloatTwo":set(),"unknownFloatThree":set(),"unknownFloatFour":set(),
-              "unknownByteSet":set(),"fixedNegativeOne":set(),"oneZeroZeroZero1":set(),
+    checks = {"unknownsConstantIntSet":set(),
+              "unknownConstantInt":set(),
+              "unknownFloatSet":set(),
+              "fixedBytes":set()}
+    acheck = {"unknownFloatTwo":set(),"unknownFloatThree":set(),"unknownFloatFour":set(),"zeroFloat":set(),
+              "unknownByteSet":set(),"unknownByteSetCont":set(),"fixedNegativeOne":set(),"oneZeroZeroZero1":set(),
               "oneZeroZeroZero2":set(),"coneLimit":set()}
-    bcheck = {"unknownFloatSet":set(),
-              "m03":set(),"m13":set(),"m23":set(),"m33":set(),
-            "zeroSet1":set(),"zeroSet3":set(),"oneFloat":set(),"unknownExtendedByteSet":set()}
+    bcheck = {"unknownFloatSet":set(),"unknown50":set(),
+              "m03":set(),"m13":set(),"m23":set(),"m33":set(),"unknownByteSetTwo":set(),
+              "zeroSet1":set(),"zeroSet3":set(),"oneFloat":set(),"unknownExtendedByteSet":set()}
+    exceptor = {}
     def norm(v):
         return np.sqrt(v[0]**2+v[1]**2+v[2]**2)
 
@@ -201,23 +255,45 @@ if __name__ == "__main__":
     for ctcf in Path(r"E:\MHW\ChunkG0").rglob("*.ctc"):
         ctc = CtcFile(ctcf).data
         for c in checks:
+            #ifIn(tryTuple(getattr(ctc.Header,c)),ctcf,checks[c])
             checks[c].add(tryTuple(getattr(ctc.Header,c)))
         for chain in ctc:
             c = chain.chain
             for a in acheck:
                 acheck[a].add(tryTuple(getattr(c,a)))
+            #first = True
+            #parentingArray = []
+            #broken = False
             for node in chain:
+                #parentingArray.append(node.fixedEnd)
+                #if first:
+                #    first = False
+                #else:
+                #    if node.fixedEnd:
+                #        #exceptor.add(ctcf)
+                #        broken = True
+                if node.unknownByteSetTwo == [0,2,0,1,1]:
+                    print(ctcf)
                 for b in bcheck:
                     bcheck[b].add(tryTuple(getattr(node,b)))
+            #if broken:
+            #    exceptor[str(ctcf)] = parentingArray
+    #for file in exceptor:
+    #    print("%s: %s"%(file,exceptor[file]))
+    raise
     for c in checks:
+        print()
         print(c)
         print(checks[c])
     for c in acheck:
+        print()
         print(c)
         print(acheck[c])
     for c in bcheck:
+        print()
         print(c)
         print(bcheck[c])
+    
     """
     uci = set()
     ui = set()

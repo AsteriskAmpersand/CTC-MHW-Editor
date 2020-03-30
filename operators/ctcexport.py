@@ -13,8 +13,36 @@ from mathutils import Vector, Matrix
 from ..structures.Ctc import Ctc,Header,ARecord,BRecord
 from ..operators.ccltools import getCol
 from ..operators.ctctools import checkIsChain, checkIsNode, checkIsChainStart, checkIsCTC
-chainPropInverse = {value:key for key, value in ARecord.renameScheme.items()}
 accessScale = lambda scaleVector: scaleVector[0]
+
+
+def isArray(propType):
+    return "[" in propType and "char" not in propType
+
+def blendToObj(obj,clss):
+    #if renameScheme in clss
+    dicObj = {}
+    for prop in clss.fields:
+        bprop = prop
+        if hasattr(clss,"renameScheme"):
+            if prop in clss.renameScheme:
+                bprop = clss.renameScheme[prop]
+        if isArray(clss.fields[prop]):
+            if bprop+"000" in obj:
+                listing = []
+                ix = 0
+                while (True):
+                    try:
+                        listing.append(obj[bprop+"%03d"%(ix)])
+                        ix+=1
+                    except:
+                        break
+                dicObj[prop] = listing
+        else:
+            if bprop in obj:
+                dicObj[prop] = obj[bprop]
+    return dicObj
+            
 
 class ExportCTC(Operator, ExportHelper):
     bl_idname = "custom_export.export_mhw_ctc"
@@ -46,16 +74,15 @@ class ExportCTC(Operator, ExportHelper):
             current = [obj for obj in current[0].children if checkIsNode(obj)]
             count += 1
         return count
-            
     
     def getFile(self):
         candidates = [obj for obj in bpy.context.scene.objects if checkIsCTC(obj)]
         if len(candidates) != 1:
             self.errors.append("Invalid number of ctc roots: %d"%len(candidates))
             raise ValueError()
-        fileHead = {key:candidates[0][key] for key in candidates[0].keys() if key in Header.fields}
-        fileHead["unknownsConstantIntSet"] = [candidates[0]["unknownsConstantIntSet%d"%i] for i in range(3)]
-        fileHead["unknownFloatSet"] = [candidates[0]["unknownFloatSet%d"%i] for i in range(3)]        
+        fileHead = blendToObj(candidates[0],Header)
+        #fileHead["unknownsConstantIntSet"] = [candidates[0]["unknownsConstantIntSet%d"%i] for i in range(3)]
+        #fileHead["unknownFloatSet"] = [candidates[0]["unknownFloatSet%d"%i] for i in range(3)]        
         fileHead["numARecords"] = len(candidates[0].children)
         fileHead["numBRecords"] = sum((ExportCTC.measureChain(chain) for chain in candidates[0].children))
         return Header().construct(fileHead),candidates[0]
@@ -65,10 +92,10 @@ class ExportCTC(Operator, ExportHelper):
         candidates = [obj for obj in file.children if checkIsChain(obj)]
         chains = []
         for chain in candidates:
-            arecord = {chainPropInverse[key]:chain[key] for key in chain.keys() if key in chainPropInverse}            
+            arecord = blendToObj(candidates[0],ARecord)     
             #("unknownByteSet","byte[2]"),("unknownByteSetCont","byte[12]"),
-            arecord["unknownByteSet"] = [chain["{Unknown Bytes %02d}"%i] for i in range(2)]
-            arecord["unknownByteSetCont"]  = [chain["{Unknown Bytes %02d}"%i] for i in range(2,14)]
+            #arecord["unknownByteSet"] = [chain["{Unknown Bytes %02d}"%i] for i in range(2)]
+            #arecord["unknownByteSetCont"]  = [chain["{Unknown Bytes %02d}"%i] for i in range(2,14)]
             arecord["chainLength"] = ExportCTC.measureChain(chain)
             chains.append(ARecord().construct(arecord))
         return chains, candidates
@@ -83,12 +110,12 @@ class ExportCTC(Operator, ExportHelper):
             currentNode = current[0]
             if not checkIsNode(currentNode):
                 raise ValueError("Non-node object on chain %s"%currentNode.name)
-            brecord = {key:currentNode[key] for key in currentNode.keys() if key in BRecord.fields}
+            brecord = blendToObj(currentNode,BRecord)
             brecord["Matrix"] = Matrix(currentNode["Matrix"])
             brecord["radius"] = currentNode.empty_draw_size*accessScale(currentNode.matrix_world.to_scale())
-            brecord["unknownFloatSet"] = [currentNode["UnknownFloat%02d"%i] for i in range(2)]
-            brecord["unknownByteSetTwo"] = [currentNode["UnknownByte%02d"%i] for i in range(5)]
-            brecord["isChainParent"] = checkIsChain(parent)
+            #brecord["unknownFloatSet"] = [currentNode["UnknownFloat%02d"%i] for i in range(2)]
+            #brecord["unknownByteSetTwo"] = [currentNode["UnknownByte%02d"%i] for i in range(5)]
+            #brecord["isChainParent"] = checkIsChain(parent)
             try: boneFunction = currentNode.constraints["Bone Function"].target["boneFunction"]
             except:
                 self.errors.append("Missing Bone Function on Node %s"%currentNode.name)
@@ -107,15 +134,17 @@ class ExportCTC(Operator, ExportHelper):
             pass
         bpy.ops.object.select_all(action='DESELECT')
         try: header,file = self.getFile()
-        except: 
+        except ValueError: 
             self.displayErrors(self.errors)
             return {'CANCELLED'}
         arecords,chains = self.getChains(file)
         try: brecords = sum([self.chainToNodes(chain) for chain in chains],[])
-        except: 
-            raise
+        except ValueError: 
             self.displayErrors(self.errors)
             return {'CANCELLED'}
+        print(header)
+        print(arecords[0])
+        print(brecords[0])
         binfile = Ctc().construct(header,arecords,brecords).serialize()
         with open(self.properties.filepath,"wb") as output:
             output.write(binfile)
@@ -133,7 +162,7 @@ class ExportCTC(Operator, ExportHelper):
     def displayErrors(errors):
         if errors:
             for _ in range(20):print()
-            print("CTC Import Errors:")
+            print("CTC Export Errors:")
             print("#"*75)
             print(errors)
             print("#"*75)

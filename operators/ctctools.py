@@ -15,55 +15,62 @@ from mathutils import Vector, Matrix
 from bpy.props import IntProperty, StringProperty, BoolProperty, EnumProperty, FloatProperty
 from ..operators.ccltools import findFunction,checkSubStarType,checkStarType,checkIsStarType
 from ..structures.Ctc import ARecord
-chainProp = ARecord.renameScheme
+#chainProp = ARecord.renameScheme
 
-def createCTCHeader(ucis,uci,ticks,pose,damp,react,grav,windM,windL,windH,ufs):
+def writeProp(obj,propName,prop):
+    try:
+        if type(prop) is str:
+            raise ValueError
+        iter(prop)
+        fromArray(obj,propName,prop)
+    except:
+        fromSingle(obj,propName,prop)
+
+def fromSingle(obj,propName,prop):
+    obj[propName] = prop
+
+def fromArray(obj, propName, array):
+    for i,propPoint in enumerate(array):
+        obj[propName+"%03d"%i]=propPoint
+
+def createCTCHeader(*args):
     header = bpy.data.objects.new("CtcHeader", None )
     bpy.context.scene.objects.link( header )
     #mod.inverse_matrix = node.matrix #experiment into the meaning of the matrix
     header.empty_draw_size = 0
     header.empty_draw_type = "SPHERE"
     header.show_x_ray = True
-    for i,ucv in enumerate(ucis): header["unknownsConstantIntSet%d"%i] = ucv 
-    header["unknownConstantInt"] = uci
-    header["updateTicks"] = ticks
-    header["poseSnapping"] = pose
-    header["chainDamping"] = damp
-    header["reactionSpeed"] = react
-    header["gravityMult"] = grav
-    header["windMultMid"] = windM
-    header["windMultLow"] = windL
-    header["windMultHigh"] = windH
-    for i,uf in enumerate(ufs): header["unknownFloatSet%d"%i] = uf
+    for name,prop in args:
+        writeProp(header,name,prop)
+    #for i,ucv in enumerate(ucis): header["unknownsConstantIntSet%d"%i] = ucv 
+    #header["unknownConstantInt"] = uci
+    #header["updateTicks"] = ticks
+    #header["poseSnapping"] = pose
+    #header["chainDamping"] = damp
+    #header["reactionSpeed"] = react
+    #header["gravityMult"] = grav
+    #header["windMultMid"] = windM
+    #header["windMultLow"] = windL
+    #header["windMultHigh"] = windH
+    #for i,uf in enumerate(ufs): header["unknownFloatSet%d"%i] = uf
     header["Type"] = "CTC"
     return header
 
-def createChain(col,w,ub,xg,yg,zg,xi,yi,zi,uf1,uf2,uf3,wm,lod):
+def createChain(*args):
     chain = bpy.data.objects.new("CtcChain", None )
     bpy.context.scene.objects.link( chain )
     chain["Type"] = "CTC_Chain"
     chain.empty_draw_size = .75
     chain.empty_draw_type = "CIRCLE"
     chain.show_x_ray = True
-    chain[chainProp["collision"]] = col
-    chain[chainProp["weightiness"]] = w
-    for i,byte in enumerate(ub): chain["{Unknown Bytes %02d}"%i] = byte
-    chain[chainProp["xGravity"]] = xg
-    chain[chainProp["yGravity"]] = yg
-    chain[chainProp["zGravity"]] = zg
-    chain[chainProp["snapping"]] = xi
-    chain[chainProp["coneLimit"]] = yi
-    chain[chainProp["tension"]] = zi
-    chain[chainProp["unknownFloatTwo"]] = uf1
-    chain[chainProp["unknownFloatThree"]] = uf2
-    chain[chainProp["unknownFloatFour"]] = uf3
-    chain[chainProp["windMultiplier"]] = wm
-    chain[chainProp["lod"]] = lod
+    for name,prop in args:
+        writeProp(chain,name,prop)
     return chain
 
-def createCTCNode(rootco, rad = 1, ufst = [0.0,0.0], ubst = [0]*5,mat = Matrix.Identity(4)):
+def createCTCNode(rootco, rad, mat, *args):
         o = bpy.data.objects.new("CtcNode", None )
         bpy.context.scene.objects.link( o )
+        o.matrix_world = mat
         mod = o.constraints.new(type = "CHILD_OF")#name= "Bone Function"
         mod.name = "Bone Function"
         mod.target = rootco
@@ -73,11 +80,12 @@ def createCTCNode(rootco, rad = 1, ufst = [0.0,0.0], ubst = [0]*5,mat = Matrix.I
         o.empty_draw_type = "SPHERE"
         o.show_x_ray = True
         o.show_bounds = False
-        for i in range(5):
-            o["UnknownByte%02d"%i] = ubst[i]
-        for i in range(2):
-            o["UnknownFloat%02d"%i] = ufst[i]
+        for name,prop in args:
+            writeProp(o,name,prop)
         o["Matrix"] = mat
+        if not o["Fixed End"]:
+            mod.mute = True
+            o.location = rootco.location
         return o
 
 def getChild(candidate):
