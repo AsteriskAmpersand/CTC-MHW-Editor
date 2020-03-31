@@ -89,7 +89,7 @@ class ARecord(PyCStruct):
 	("unknownFloatFour","float"),#0.1 Usually
 	("windMultiplier","float"),
 	("lod","int"),])
-    hide = ["fixedNegativeOne","oneZeroZeroZero1","oneZeroZeroZero2","unknownByteSetCont"]
+    hide = ["chainLength","fixedNegativeOne","oneZeroZeroZero1","oneZeroZeroZero2","unknownByteSetCont"]
     
     def construct(self,data):
         #data["fixedNegativeOne"] = [-1]*4
@@ -272,15 +272,15 @@ if __name__ == "__main__":
                 #    if node.fixedEnd:
                 #        #exceptor.add(ctcf)
                 #        broken = True
-                if node.unknownByteSetTwo == [0,2,0,1,1]:
-                    print(ctcf)
+                #if node.unknownByteSetTwo == [0,2,0,1,1]:
+                #    print(ctcf)
                 for b in bcheck:
                     bcheck[b].add(tryTuple(getattr(node,b)))
             #if broken:
             #    exceptor[str(ctcf)] = parentingArray
     #for file in exceptor:
     #    print("%s: %s"%(file,exceptor[file]))
-    raise
+    #raise
     for c in checks:
         print()
         print(c)
@@ -289,6 +289,7 @@ if __name__ == "__main__":
         print()
         print(c)
         print(acheck[c])
+    raise
     for c in bcheck:
         print()
         print(c)

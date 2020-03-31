@@ -83,8 +83,8 @@ class ImportCTC(Operator, ImportHelper):
                 node = self.createRecordNode(node)
                 node.parent = parent
                 bpy.context.scene.update()
-                if node["Fixed End"]:
-                    node.constraints["Bone Function"].inverse_matrix = parent.matrix_world.inverted()
+                #if node["Fixed End"]:
+                node.constraints["Bone Function"].inverse_matrix = parent.matrix_world.inverted()
                 bpy.context.scene.update()
                 parent = node
             except BoneFunctionError:

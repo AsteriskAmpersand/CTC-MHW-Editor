@@ -67,25 +67,39 @@ def createChain(*args):
         writeProp(chain,name,prop)
     return chain
 
+def createStarFrame(obj,radius,mat):
+    o = bpy.data.objects.new("*Frame", None )
+    bpy.context.scene.objects.link( o )
+    o.parent = obj
+    o.matrix_world = mat
+    o.empty_draw_type = "ARROWS"
+    o.show_x_ray = True
+    o.show_bounds = False
+    o["Type"] = "CTC_*_Frame"
+    o.empty_draw_size = obj.empty_draw_size
+    return o
+
 def createCTCNode(rootco, rad, mat, *args):
         o = bpy.data.objects.new("CtcNode", None )
         bpy.context.scene.objects.link( o )
-        o.matrix_world = mat
+        #o.matrix_world = mat
         mod = o.constraints.new(type = "CHILD_OF")#name= "Bone Function"
         mod.name = "Bone Function"
         mod.target = rootco
         #mod.inverse_matrix = node.matrix #experiment into the meaning of the matrix
         o["Type"] = "CTC_Node"
-        o.empty_draw_size = rad
+        #o.empty_draw_size = rad
         o.empty_draw_type = "SPHERE"
         o.show_x_ray = True
         o.show_bounds = False
+        o.select_hide = True
+        f = createStarFrame(o,rad,mat)
         for name,prop in args:
-            writeProp(o,name,prop)
-        o["Matrix"] = mat
-        if not o["Fixed End"]:
-            mod.mute = True
-            o.location = rootco.location
+            writeProp(f,name,prop)        
+        #o["Matrix"] = mat
+        #if not o["Fixed End"]:
+        #    mod.mute = True
+         #   o.location = rootco.location
         return o
 
 def getChild(candidate):
@@ -253,7 +267,15 @@ class chainFromSelection(bpy.types.Operator):
     w = IntProperty(
             name = "Weightiness",
             description = "Weight Dynamics Type Enumeration Index.",
-            default = 7
+            default = 39
+            )
+    ubs = EnumProperty(
+            name = "Unknown Byte Pair",
+            description = "Unknown Pair of data as Bytes",
+            items = [(str(tuppling),str(tuppling),"") for tuppling in 
+                     [(1, 2), (0, 1), (0, 0), (32, 0), (96, 0), (64, 0), (17, 0), (17, 1), (17, 2), (16, 0), (1, 1), (80, 0), (1, 0), (0, 2), (68, 0), (4, 0)]
+                    ],
+            default = "(0, 0)"
             )
     xg = FloatProperty(
             name = "X-Axis Gravity",
@@ -263,7 +285,7 @@ class chainFromSelection(bpy.types.Operator):
     yg = FloatProperty(
             name = "Y-Axis Gravity",
             description = "Gravity Force along Y Axis.",
-            default = 980.0
+            default = -980.0
             )
     zg = FloatProperty(
             name = "Z-Axis Gravity",
@@ -273,17 +295,17 @@ class chainFromSelection(bpy.types.Operator):
     xi = FloatProperty(
             name = "Pose Snapping",
             description = "Restitution Force to Original Position.",
-            default = 0.05
+            default = 0.5
             )
     yi = FloatProperty(
             name = "Cone of Motion",
             description = "Suspected Steradian Limitation to Motion.",
-            default = 0.8
+            default = 0.5
             )
     zi = FloatProperty(
             name = "Tension",
             description = "Restitution Speed to Original Position",
-            default = 0.005
+            default = 0.5
             )
     uf1 = FloatProperty(
             name = "Unknown Float 1",
@@ -328,12 +350,13 @@ class chainFromSelection(bpy.types.Operator):
     def execute(self,context):
         selection = bpy.selection
         self.validate(selection)
-        chainStart = createChain(self.col,self.w,
-                                 [0]*14,#2+12
-                                 self.xg,self.yg,self.zg,
+        chainStart = createChain(zip(ARecord.fields,[-1,self.col,self.w,
+                                 eval(self.ubs),[-1]*4,[1,0,0,0],[1,0,0,0]
+                                 [-51]*12,
+                                 self.xg,self.yg,self.zg,0.0,
                                  self.xi,self.yi,self.zi,
                                  self.uf1,self.uf2,self.uf3,
-                                 self.wm,self.lod)
+                                 self.wm,self.lod]))
         self.buildChain(selection,chainStart)
         return {"FINISHED"}
     
