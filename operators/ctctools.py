@@ -14,8 +14,8 @@ import bpy
 from mathutils import Vector, Matrix
 from bpy.props import IntProperty, StringProperty, BoolProperty, EnumProperty, FloatProperty
 from ..operators.ccltools import findFunction,checkSubStarType,checkStarType,checkIsStarType
-from ..structures.Ctc import ARecord
-#chainProp = ARecord.renameScheme
+from ..structures.Ctc import ARecord,BRecord,Header
+accessScale = lambda scaleVector: scaleVector[0]
 
 def writeProp(obj,propName,prop):
     try:
@@ -92,7 +92,7 @@ def createCTCNode(rootco, rad, mat, *args):
         o.empty_draw_type = "SPHERE"
         o.show_x_ray = True
         o.show_bounds = False
-        o.select_hide = True
+        o.hide_select = True
         f = createStarFrame(o,rad,mat)
         for name,prop in args:
             writeProp(f,name,prop)        
@@ -342,16 +342,19 @@ class chainFromSelection(bpy.types.Operator):
             node.constraints["Bone Function"].inverse_matrix = parent.matrix_world.inverted()
             parent = node
     
-    def validate(self,selection):
+    @classmethod
+    def poll(cls,context):
+        selection = bpy.selection
         for bone in selection:
             if not checkIsBone(bone):
-                raise ValueError("Non-bone on selection: %s"%bone.name)
+                return False
+        return len(selection)>0
     
     def execute(self,context):
         selection = bpy.selection
-        self.validate(selection)
-        chainStart = createChain(zip(ARecord.fields,[-1,self.col,self.w,
-                                 eval(self.ubs),[-1]*4,[1,0,0,0],[1,0,0,0]
+        #self.validate(selection)
+        chainStart = createChain(*zip(ARecord.fields,[-1,self.col,self.w,
+                                 eval(self.ubs),[-1]*4,[1,0,0,0],[1,0,0,0],
                                  [-51]*12,
                                  self.xg,self.yg,self.zg,0.0,
                                  self.xi,self.yi,self.zi,
@@ -360,13 +363,210 @@ class chainFromSelection(bpy.types.Operator):
         self.buildChain(selection,chainStart)
         return {"FINISHED"}
     
+class nodeFromActive(bpy.types.Operator):        
+    bl_idname = 'ctc_tools.node_from_active'
+    bl_label = 'Create CTC Node'
+    bl_description = 'Create CTC Node from Active'
+    bl_options = {"REGISTER", "UNDO"}
+    
+    radius = FloatProperty(
+        name = "Collision Radius",
+        description = "Collision Radius.",
+        default = 1.0
+        )
+    fixed = IntProperty(
+        name = "Fixed End",
+        description = "Determines if bone should be afixed to position (catenary end).",
+        default = 0
+        )
+    ubst = EnumProperty(
+        name = "Unknown Byte Set",
+        description = "Set of Unknown Bytes",
+        items = list(reversed([(str(entry),str(entry),"")
+                for entry in [(0, 0, 0, 0, 0), (0, 0, 0, 0, 1), (0, 0, 0, 1, 1),
+                              (0, 0, 0, 2, 1), (0, 1, 0, 0, 0), (0, 1, 0, 0, 1),
+                              (0, 1, 0, 0, 2), (0, 1, 0, 1, 0), (0, 1, 0, 1, 1),
+                              (0, 1, 0, 1, 2), (0, 1, 0, 2, 0), (0, 1, 0, 2, 1),
+                              (0, 1, 0, 2, 2), (0, 2, 0, 0, 0), (0, 2, 0, 0, 1),
+                              (0, 2, 0, 1, 1), (0, 2, 0, 2, 1), (0, 2, 0, 2, 2),
+                              (0, 3, 0, 0, 1), (0, 3, 0, 1, 1), (0, 3, 0, 2, 1),
+                              (1, 1, 0, 1, 1)]
+                ]))
+        )
+    unk50 = IntProperty(
+        name = "Unknown 50",
+        description = "Unknown that takes values between 54 and 59 or 0.",
+        default = 0
+        )
+    unkFS0 = FloatProperty(
+        name = "Unknown Float 0",
+        description = "Unknown Float",
+        default = 1.0
+        )
+    unkFS1 = FloatProperty(
+        name = "Unknown Float 1",
+        description = "Unknown Float",
+        default = 1.0
+        )
+    unkFS2 = FloatProperty(
+        name = "Unknown Float 2",
+        description = "Unknown Float",
+        default = 1.0
+        )
+    @classmethod
+    def poll(cls,context):
+        return bpy.context.active_object and "boneFunction" in bpy.context.active_object
+    
+    def execute(self,context):
+        rootco = bpy.context.active_object
+        createCTCNode(rootco,self.radius,Matrix.Identity(4),*zip(BRecord.fields,
+                          [[0,0],self.fixed,eval(self.ubst),rootco["boneFunction"],
+                           self.unk50,[0,0,0],self.radius,[self.unkFS0,self.unkFS1,self.unkFS2],1.0,[-51]*12]))
+        return {"FINISHED"}
+
+def getRoot(currentNode):
+    if "Bone Function" not in currentNode.constraints or \
+        currentNode.constraints["Bone Function"].target is None or \
+            "boneFunction" not in currentNode.constraints["Bone Function"].target:
+                return None
+    else: return currentNode.constraints["Bone Function"].target
+
+checkIsStarFrame = checkStarType("CTC_*_Frame")
+
+def getStarFrame(currentNode):
+    for c in currentNode.children:
+        if checkIsStarFrame(c):
+            return c
+    else: return None
+
+def orientVectorPair(v0,v1):
+    v0 = v0.normalized()
+    v1 = v1.normalized()
+    if v0 == v1:
+        return Matrix.Identity(3)
+    v = v0.cross(v1)
+    #s = v.length
+    c = v0.dot(v1)
+    if c == -1: return Matrix([[-1,0,0],[0,-1,0],[0,0,1]])
+    vx = Matrix([[0,-v[2], v[1]],[v[2],0,-v[0]],[-v[1],v[0],0]])
+    return Matrix.Identity(3)+vx+(1/(1+c))*vx*vx
+    
+class orientToActive(bpy.types.Operator):
+    bl_idname = 'ctc_tools.orient_to_active'
+    bl_label = 'Orient to Active'
+    bl_description = 'Orient selection to active.'
+    bl_options = {"REGISTER", "UNDO"}
+    
+    axis = EnumProperty(
+        name = "Axis Vector",
+        description = "Axis vector to align",
+        items = list(reversed([("x","X-Axis","",0),
+                 ("y","Y-Axis","",1),
+                 ("z","Z-Axis","",2),])),
+        default = "x"
+        )
+    
+    @classmethod
+    def poll(cls,context):
+        active = bpy.context.active_object
+        selection = [obj for obj in bpy.context.selected_objects if obj != active]
+        return active and selection and all(map(lambda x: (checkIsNode(x) and getStarFrame(x) is not None) or checkIsStarFrame(x),selection))
+    
+    def orientVectorSystem(self,obj,target,axis):
+        star = obj if checkIsStarFrame(obj) else getStarFrame(obj)
+        sscale = star.empty_draw_size*accessScale(star.matrix_world.to_scale())
+        star.empty_draw_size = sscale
+        loc = star.location
+        targetVector = target.matrix_world.translation-star.matrix_world.translation
+        M = orientVectorPair(axis,targetVector)
+        star.matrix_local = M.to_4x4()
+        star.location = loc
+    
+    def execute(self,context):
+        vec = Vector({"x":[1,0,0],"y":[0,1,0],"z":[0,0,1]}[self.axis])
+        active = bpy.context.active_object
+        for obj in [obj for obj in bpy.context.selected_objects if obj != active]:
+            self.orientVectorSystem(obj,active,vec)
+        #bpy.context.scene.update()
+        return {"FINISHED"}
+
+class orientToActiveProjection(bpy.types.Operator):
+    bl_idname = 'ctc_tools.orient_projection'
+    bl_label = 'Orient to Active Projection'
+    bl_description = 'Orient selection to active projection on the plane whose normal is the fixed vector.'
+    bl_options = {"REGISTER", "UNDO"}
+    
+    axis = EnumProperty(
+        name = "Fixed Vector - Orienting Vector",
+        description = "Axis vector to freeze and vector to align",
+        items = list(reversed([
+                ('("x","y")',"Freeze X - Orient Y ","",0),
+                ('("x","z")',"Freeze X - Orient Z ","",1),
+                ('("y","x")',"Freeze Y - Orient X ","",2),
+                ('("y","z")',"Freeze Y - Orient Z ","",3),
+                ('("z","x")',"Freeze Z - Orient X ","",4),
+                ('("z","y")',"Freeze Z - Orient Y ","",5),
+                 ])),
+        default = '("z","x")'
+        )
+        
+    @classmethod
+    def poll(cls,context):
+        active = bpy.context.active_object
+        selection = [obj for obj in bpy.context.selected_objects if obj != active]
+        return active and selection and all(map(lambda x: (checkIsNode(x) and getStarFrame(x) is not None) or checkIsStarFrame(x),selection))
+    
+    
+    def orientVectorSystem(self, obj, target, frozenAxis, freeVector):
+        star = obj if checkIsStarFrame(obj) else getStarFrame(obj)
+        
+        sscale = star.empty_draw_size*accessScale(star.matrix_world.to_scale())
+        star.empty_draw_size = sscale
+        mat = star.matrix_local.normalized()
+        star.matrix_local.normalize()
+        print(mat)
+        frozenAxis = Vector(mat.col[frozenAxis][0:3])
+        freeVector = Vector(mat.col[freeVector][0:3])
+        print(frozenAxis)
+        print(freeVector)
+        targetVector = (target.matrix_world.translation-star.matrix_world.translation).normalized()
+        print(targetVector)
+        projection = self.normalProjection(frozenAxis,targetVector)
+        print(projection)
+        if projection.length < 0.001: return
+        M = orientVectorPair(freeVector,projection)
+        loc = star.location
+        star.matrix_local = M.to_4x4()*star.matrix_local
+        star.location = loc
+        return
+        
+        
+    def normalProjection(self,normal,vector):
+        return vector - vector.dot(normal)/normal.length**2*normal
+    
+    def execute(self,context):
+        fix,orienting = eval(self.axis)
+        active = bpy.context.active_object
+        frozenIndex = {"x":0,"y":1,"z":2}[fix]
+        freeIndex = {"x":0,"y":1,"z":2}[orienting]
+        for obj in [obj for obj in bpy.context.selected_objects if obj != active]:
+            self.orientVectorSystem(obj,active,frozenIndex,freeIndex)
+        return {"FINISHED"}
+            
+
 def chainRematchValidate(active,selection):
-    if len(selection)!=1 or not(checkIsChain(active) or checkIsNode(active)) or not checkIsBone(selection[0]):
-            errorMsg = "Incorrect Selection: Active Object (last selected) must be a CTC Chain or Node and other selected object must be a Bone.\n"
-            errorMsg+= ("Selection is %d objects big, should be 1.\n"%len(selection) if len(selection)!=1 else "") +\
-                            ("%s is not a CTC Chain or Node.\n"%active.name if not(checkIsChain(active) or checkIsNode(active)) else "") +\
-                            ("%s is not a bone.\n"%selection[0].name if not(checkIsBone(selection[0])) else "")
-            raise ValueError(errorMsg)
+    if len(selection) != 1:
+        return False
+    select = selection[0]
+    if not(checkIsChain(select) or checkIsNode(select) or checkIsStarFrame(select)) \
+            or not checkIsBone(active):
+        return False
+        #errorMsg = "Incorrect Selection: Active Object (last selected) must be a CTC Chain or Node and other selected object must be a Bone.\n"
+        #errorMsg+= ("Selection is %d objects big, should be 1.\n"%len(selection) if len(selection)!=1 else "") +\
+        #                ("%s is not a CTC Chain or Node.\n"%active.name if not(checkIsChain(active) or checkIsNode(active)) else "") +\
+        #                ("%s is not a bone.\n"%selection[0].name if not(checkIsBone(selection[0])) else "")
+        #raise ValueError(errorMsg)
+    return True
       
 class extendChain(bpy.types.Operator):        
     bl_idname = 'ctc_tools.extend_chain'
@@ -394,8 +594,11 @@ class restartChain(bpy.types.Operator):
     bl_description = 'Change Chain Start Bone Target and work downwards Recursively'
     bl_options = {"REGISTER", "UNDO"}
     
-    def validate(self, active, selection):
-        chainRematchValidate(active, selection)
+    @classmethod
+    def poll(cls, context):
+        active = bpy.context.active_object
+        selection = [obj for obj in bpy.context.selected_objects if obj != active]
+        return chainRematchValidate(active, selection)
         
     def combineChain(self, chainEnd, skeletonEnd):
         ctcChain = getLowerChain(chainEnd)
@@ -414,10 +617,11 @@ class restartChain(bpy.types.Operator):
         return
     
     def execute(self,context):
-        active = bpy.context.active_object
-        selection = [obj for obj in bpy.context.selected_objects if obj != active]
-        self.validate(active,selection)
-        rootBone = selection[0]
+        select = bpy.context.active_object
+        active = [obj for obj in bpy.context.selected_objects if obj != select][0]
+        active = active.parent if checkIsStarFrame(active) else active
+        #self.validate(active,selection)
+        rootBone = select
         chainRoot = getChainEnd(active) if checkIsChain(active) else active
         self.combineChain(chainRoot, rootBone)
         bpy.ops.ctc_tools.realign_chain()
@@ -429,8 +633,11 @@ class reendChain(bpy.types.Operator):
     bl_description = 'Change Chain End Bone Target and work upwards recurively'
     bl_options = {"REGISTER", "UNDO"}
     
-    def validate(self, active, selection):
-        chainRematchValidate(active, selection)
+    @classmethod
+    def poll(cls, context):
+        active = bpy.context.active_object
+        selection = [obj for obj in bpy.context.selected_objects if obj != active]
+        return chainRematchValidate(active, selection)
         
     def getChainEnd(self, active):
         child = getChild(active)
@@ -455,10 +662,11 @@ class reendChain(bpy.types.Operator):
         return
     
     def execute(self,context):
-        active = bpy.context.active_object
-        selection = [obj for obj in bpy.context.selected_objects if obj != active]
-        self.validate(active,selection)
-        rootBone = selection[0]
+        select = bpy.context.active_object
+        active = [obj for obj in bpy.context.selected_objects if obj != select][0]
+        active = active.parent if checkIsStarFrame(active) else active
+        #self.validate(active,selection)
+        rootBone = select
         chainRoot = self.getChainEnd(active) if checkIsChain(active) else active
         self.combineChain(chainRoot, rootBone)
         bpy.ops.ctc_tools.realign_chain()

@@ -7,7 +7,7 @@ Created on Mon Oct 28 23:04:20 2019
 import bpy
 
 class CTCTools(bpy.types.Panel):
-    bl_category = "MHW Physics"
+    bl_category = "MHW Tools"
     bl_idname = "panel.mhw_ctc"
     bl_label = "CTC Tools"
     bl_space_type = "VIEW_3D"
@@ -80,7 +80,10 @@ class CTCTools(bpy.types.Panel):
     def draw_create_tools(self, context, layout):
         col = layout.column(align = True)
         #col.operator("ctc_tools.create_ctc", icon='MOD_MESHDEFORM', text="Create CTC File")
+        col.operator("ctc_tools.node_from_active", icon='CONSTRAINT_DATA', text="Node from Active")
         col.operator("ctc_tools.chain_from_selection", icon='CONSTRAINT_DATA', text="Chain from Selection")
+        col.operator("ctc_tools.orient_to_active", icon='CONSTRAINT_DATA', text="Point Nodes to Active")
+        col.operator("ctc_tools.orient_projection", icon='CONSTRAINT_DATA', text="Point Nodes to Active Projection")
         #col.operator("ctc_tools.extend_chain", icon='CONSTRAINT_DATA', text="Extend Chain")
         ##col.operator("ctc_tools.change_target", icon='CONSTRAINT_DATA', text="Change Target")
         col.operator("ctc_tools.restart_chain", icon='CONSTRAINT_DATA', text="Restart Chain")

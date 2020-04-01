@@ -289,7 +289,6 @@ if __name__ == "__main__":
         print()
         print(c)
         print(acheck[c])
-    raise
     for c in bcheck:
         print()
         print(c)

@@ -162,7 +162,7 @@ def duplicateCapsule(capsule,xmirror=False,ymirror=False,zmirror=False):
     capsule2["Data"] = capsule["Data"]
 
 class CCLTools(bpy.types.Panel):
-    bl_category = "MHW Physics"
+    bl_category = "MHW Tools"
     bl_idname = "panel.mhw_ccl"
     bl_label = "CCL Tools"
     bl_space_type = "VIEW_3D"

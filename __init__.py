@@ -26,7 +26,8 @@ from .operators.ccltools import MeshFromCapsule,CapsuleFromSelection,DuplicateCa
 from .operators.ccltools import CopyCCLData, PasteCCLData, CCLTools, hideCCL, showCCL
 from .operators.ctctools import (findDuplicates, realignChain, #changeNodeTarget,
                                  reendChain, restartChain, extendChain,
-                                 createCTC, chainFromSelection,
+                                 createCTC, chainFromSelection,nodeFromActive,
+                                 orientToActive,orientToActiveProjection,
                                  hideCTC, showCTC,)
 from .operators.ctctoolspanel import CTCTools
 from .operators.ctcmatrixtools import (get_all_matrices,set_all_matrices,
@@ -50,7 +51,8 @@ classes = [Selection,
            CCLTools,CTCTools,CTCPrefs,
            findDuplicates, realignChain, #changeNodeTarget,
            reendChain, restartChain, extendChain,
-           createCTC, chainFromSelection,
+           createCTC, chainFromSelection, nodeFromActive,
+           orientToActive,orientToActiveProjection,
            hideCTC, showCTC,
            get_all_matrices,set_all_matrices,
            get_rotation_matrices,set_rotation_matrices,

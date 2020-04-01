@@ -12,9 +12,7 @@ from bpy.types import Operator
 from mathutils import Vector, Matrix
 from ..structures.Ctc import Ctc,Header,ARecord,BRecord
 from ..operators.ccltools import getCol
-from ..operators.ctctools import checkIsChain, checkIsNode, checkIsChainStart, checkIsCTC
-accessScale = lambda scaleVector: scaleVector[0]
-
+from ..operators.ctctools import checkIsChain, checkIsNode, checkIsChainStart, checkIsCTC, getStarFrame, accessScale
 
 def isArray(propType):
     return "[" in propType and "char" not in propType
@@ -110,9 +108,12 @@ class ExportCTC(Operator, ExportHelper):
             currentNode = current[0]
             if not checkIsNode(currentNode):
                 raise ValueError("Non-node object on chain %s"%currentNode.name)
-            brecord = blendToObj(currentNode,BRecord)
-            brecord["Matrix"] = Matrix(currentNode["Matrix"])
-            brecord["radius"] = currentNode.empty_draw_size*accessScale(currentNode.matrix_world.to_scale())
+            star = getStarFrame(currentNode)
+            if star is None:
+                raise ValueError("Node %s is missing it's corresponding * Frame"%currentNode.name)
+            brecord = blendToObj(star,BRecord)
+            brecord["Matrix"] = star.matrix_local.normalized()
+            brecord["radius"] = star.empty_draw_size*accessScale(star.matrix_world.to_scale())
             #brecord["unknownFloatSet"] = [currentNode["UnknownFloat%02d"%i] for i in range(2)]
             #brecord["unknownByteSetTwo"] = [currentNode["UnknownByte%02d"%i] for i in range(5)]
             #brecord["isChainParent"] = checkIsChain(parent)
