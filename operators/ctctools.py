@@ -747,6 +747,83 @@ class findDuplicates(bpy.types.Operator):
                     print("\t\t%s -> %s"%(n,b))            
         return {"FINISHED"}
     
+class ctcAnon(bpy.types.Operator):
+    bl_idname = 'mod_tools.clear_ctc_functions'
+    bl_label = "Anonymize CTC Bones' Functions"
+    bl_description = 'Sets free-physics bones to annoynimized functions.'
+    bl_options = {"REGISTER", "PRESET", "UNDO"}   
+
+    annon = bpy.props.StringProperty(
+                        name = 'Anonymized ID',
+                        description = 'Anonymized ID to use.',
+                        default = "CTC_Annon_Function",
+                        )
+
+    def execute(self,context):
+        for node in [o for o in bpy.context.scene.objects if o.type == "EMPTY" and checkIsNode(o)]:
+            if "Bone Function" in node.constraints:
+                target = node.constraints["Bone Function"].target
+                if "boneFunction" in target:
+                    target["boneFunction"] = self.annon
+        return {'FINISHED'}
+        #col.operator("mod_tools.clear_ctc_functions", icon='GROUP_BONE', text="Anonymize CTC Functions")
+
+def testAnon(o):
+    try:
+        int(o["boneFunction"])
+        return False
+    except:                
+        return True
+       
+class ctcDeanon(bpy.types.Operator):
+    bl_idname = 'mod_tools.assign_ctc_functions'
+    bl_label = "Deannonymize CTC Bones' Functions"
+    bl_description = 'Assigns fixed ids to annonymized free-physics bones.'
+    bl_options = {"REGISTER", "PRESET", "UNDO"}   
+
+    annon = bpy.props.IntProperty(
+                        name = 'Starting ID',
+                        description = 'Starting ID to use.',
+                        default = 0,
+                        )
+    only = bpy.props.BoolProperty(
+                        name = 'Limit to Annonymized Functions',
+                        description = 'Only rename annonymized functions.',
+                        default = True,
+                        )
+
+    def execute(self,context):
+        occupiedIDs = {o["boneFunction"] for o in bpy.context.scene.objects if o.type == "EMPTY" and "boneFunction" in o}
+        i = self.annon
+        for bone in [o for o in bpy.context.scene.objects if o.type == "EMPTY" and checkIsNode(o)]:
+            if "Bone Function" in bone.constraints:
+                target = bone.constraints["Bone Function"].target
+                if "boneFunction" in target:
+                    if not self.only or testAnon(target):
+                        while i in occupiedIDs:
+                            i+=1
+                        target["boneFunction"] = i
+                        i+=1
+        return {'FINISHED'}         
+                
+        #col.operator("mod_tools.assign_ctc_functions", icon='GROUP_BONE', text="Deanonymize CTC Functions")
+        
+class ctcClear(bpy.types.Operator):
+    bl_idname = 'mod_tools.delete_orphans'
+    bl_label = "Delete Orphan CTC Functions"
+    bl_description = 'Deletes bone with annonymized bone functions.'
+    bl_options = {"REGISTER", "PRESET", "UNDO"}   
+
+    def execute(self,context):
+        objs = bpy.data.objects
+        for bone in [o for o in bpy.context.scene.objects if o.type == "EMPTY" and "boneFunction" in o]:
+            if testAnon(bone):
+                for c in bone.children:
+                    c.parent = bone.parent
+                objs.remove(objs[bone.name], do_unlink=True)
+        return {'FINISHED'}
+        #col.operator("mod_tools.delete_orphans", icon='GROUP_BONE', text="Delete Orphan CTC Functions")
+    
 class hideCTC(bpy.types.Operator):
     bl_idname = 'ctc_tools.hide_ctc'
     bl_label = 'Hide CTC Structures'

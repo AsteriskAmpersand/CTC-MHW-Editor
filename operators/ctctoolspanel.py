@@ -24,7 +24,7 @@ class CTCTools(bpy.types.Panel):
         #self.layout.label("CCL Capsule Tools")
         #self.layout.operator("ctc_tools.mesh_from_capsule", icon='MESH_CUBE', text="Mesh from Capsule")
         self.draw_create_tools(context, layout)
-        self.draw_edit_matrixes(context, layout)
+        #self.draw_edit_matrixes(context, layout)
         layout.separator()
         
     def draw_edit_matrixes(self, context, layout):
@@ -90,6 +90,9 @@ class CTCTools(bpy.types.Panel):
         col.operator("ctc_tools.reend_chain", icon='CONSTRAINT_DATA', text="Re-End Chain")  
         col.operator("ctc_tools.realign_chain", icon='MOD_MESHDEFORM', text="Realign Chains with Target")
         col.operator("ctc_tools.find_duplicates", icon='MOD_MESHDEFORM', text="Find Duplicate IDs")
+        col.operator("mod_tools.clear_ctc_functions", icon='GROUP_BONE', text="Anonymize CTC Functions")
+        col.operator("mod_tools.assign_ctc_functions", icon='GROUP_BONE', text="Deanonymize CTC Functions")
+        col.operator("mod_tools.delete_orphans", icon='GROUP_BONE', text="Delete Orphan CTC Functions")
         
         col = layout.column(align = True)
         row = col.row(align = True)

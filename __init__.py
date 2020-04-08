@@ -28,6 +28,7 @@ from .operators.ctctools import (findDuplicates, realignChain, #changeNodeTarget
                                  reendChain, restartChain, extendChain,
                                  createCTC, chainFromSelection,nodeFromActive,
                                  orientToActive,orientToActiveProjection,
+                                 ctcAnon, ctcDeanon, ctcClear,
                                  hideCTC, showCTC,)
 from .operators.ctctoolspanel import CTCTools
 from .operators.ctcmatrixtools import (get_all_matrices,set_all_matrices,
@@ -53,6 +54,7 @@ classes = [Selection,
            reendChain, restartChain, extendChain,
            createCTC, chainFromSelection, nodeFromActive,
            orientToActive,orientToActiveProjection,
+           ctcAnon, ctcDeanon, ctcClear,
            hideCTC, showCTC,
            get_all_matrices,set_all_matrices,
            get_rotation_matrices,set_rotation_matrices,
