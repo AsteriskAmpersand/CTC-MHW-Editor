@@ -143,9 +143,6 @@ class ExportCTC(Operator, ExportHelper):
         except ValueError: 
             self.displayErrors(self.errors)
             return {'CANCELLED'}
-        print(header)
-        print(arecords[0])
-        print(brecords[0])
         binfile = Ctc().construct(header,arecords,brecords).serialize()
         with open(self.properties.filepath,"wb") as output:
             output.write(binfile)

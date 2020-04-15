@@ -43,7 +43,6 @@ class Header(PyCStruct):
     def construct(self,data):
         data["filetype"]="CTC\x00"
         #data["fixedBytes"]=[1,1,1,1,1,1,0,0]
-        print(data)
         super().construct(data)
         return self
     
@@ -96,7 +95,6 @@ class ARecord(PyCStruct):
         #data["oneZeroZeroZero1"] = [1,0,0,0]
         #data["oneZeroZeroZero2"] = [1,0,0,0]
         #data["zeroFloat"] = 0.0
-        print(data)
         super().construct(data)
         return self
     
@@ -182,7 +180,6 @@ class BRecord(PyCStruct):
         #data["zeroSet3"] = [0,0,0] 
         #data["oneFloat"] = 1.0
         #data["unknownExtendedByteSet"] = [-51]*12
-        print(data)
         super().construct(data)
         return self
 #} brecord [ header.numBRecords ] }}

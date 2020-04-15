@@ -107,7 +107,6 @@ class set_rotation_matrices(ctcSet):
     buffer = 'rotation_buffer'
     @staticmethod
     def setProperty(obj,value):
-        print(value)
         obj["Matrix"] = Matrix.Translation(Matrix(obj["Matrix"]).to_translation() )*value.to_matrix().to_4x4()
         
 class get_translation_matrices(ctcGet):

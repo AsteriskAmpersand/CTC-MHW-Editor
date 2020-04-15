@@ -93,6 +93,7 @@ class CTCTools(bpy.types.Panel):
         col.operator("mod_tools.clear_ctc_functions", icon='GROUP_BONE', text="Anonymize CTC Functions")
         col.operator("mod_tools.assign_ctc_functions", icon='GROUP_BONE', text="Deanonymize CTC Functions")
         col.operator("mod_tools.delete_orphans", icon='GROUP_BONE', text="Delete Orphan CTC Functions")
+        col.operator("mod_tools.delete_fixed", icon='GROUP_BONE', text="Delete Fixed Functions")
         
         col = layout.column(align = True)
         row = col.row(align = True)

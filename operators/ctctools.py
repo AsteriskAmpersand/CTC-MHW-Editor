@@ -336,7 +336,7 @@ class chainFromSelection(bpy.types.Operator):
     def buildChain(self,selection, chainStart):
         parent = chainStart
         for bone in bpy.selection:
-            node = createCTCNode(bone)
+            node = createCTCNode(bone,1,Matrix.Identity(4))
             node.parent = parent
             bpy.context.scene.update()
             node.constraints["Bone Function"].inverse_matrix = parent.matrix_world.inverted()
@@ -524,15 +524,10 @@ class orientToActiveProjection(bpy.types.Operator):
         star.empty_draw_size = sscale
         mat = star.matrix_local.normalized()
         star.matrix_local.normalize()
-        print(mat)
         frozenAxis = Vector(mat.col[frozenAxis][0:3])
         freeVector = Vector(mat.col[freeVector][0:3])
-        print(frozenAxis)
-        print(freeVector)
         targetVector = (target.matrix_world.translation-star.matrix_world.translation).normalized()
-        print(targetVector)
         projection = self.normalProjection(frozenAxis,targetVector)
-        print(projection)
         if projection.length < 0.001: return
         M = orientVectorPair(freeVector,projection)
         loc = star.location
@@ -823,6 +818,24 @@ class ctcClear(bpy.types.Operator):
                 objs.remove(objs[bone.name], do_unlink=True)
         return {'FINISHED'}
         #col.operator("mod_tools.delete_orphans", icon='GROUP_BONE', text="Delete Orphan CTC Functions")
+        
+class ctcOrphan(bpy.types.Operator):
+    bl_idname = 'mod_tools.delete_fixed'
+    bl_label = "Delete Fixed Bone Functions"
+    bl_description = 'Deletes bone with non annonymized bone functions.'
+    bl_options = {"REGISTER", "PRESET", "UNDO"}   
+
+    def execute(self,context):
+        objs = bpy.data.objects
+        for bone in [o for o in bpy.context.scene.objects if o.type == "EMPTY" and "boneFunction" in o]:
+            if not testAnon(bone):
+                for c in bone.children:
+                    matrix = c.matrix_world
+                    c.parent = bone.parent
+                    c.matrix_world = matrix
+                objs.remove(objs[bone.name], do_unlink=True)
+        return {'FINISHED'}
+        #col.operator("mod_tools.delete_fixed", icon='GROUP_BONE', text="Delete Fixed Functions")
     
 class hideCTC(bpy.types.Operator):
     bl_idname = 'ctc_tools.hide_ctc'
