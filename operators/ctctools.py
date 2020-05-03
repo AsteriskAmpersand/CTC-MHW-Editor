@@ -758,7 +758,7 @@ class ctcAnon(bpy.types.Operator):
         for node in [o for o in bpy.context.scene.objects if o.type == "EMPTY" and checkIsNode(o)]:
             if "Bone Function" in node.constraints:
                 target = node.constraints["Bone Function"].target
-                if "boneFunction" in target:
+                if target and "boneFunction" in target:
                     target["boneFunction"] = self.annon
         return {'FINISHED'}
         #col.operator("mod_tools.clear_ctc_functions", icon='GROUP_BONE', text="Anonymize CTC Functions")
@@ -793,7 +793,7 @@ class ctcDeanon(bpy.types.Operator):
         for bone in [o for o in bpy.context.scene.objects if o.type == "EMPTY" and checkIsNode(o)]:
             if "Bone Function" in bone.constraints:
                 target = bone.constraints["Bone Function"].target
-                if "boneFunction" in target:
+                if target and "boneFunction" in target:
                     if not self.only or testAnon(target):
                         while i in occupiedIDs:
                             i+=1
