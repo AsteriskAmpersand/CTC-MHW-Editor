@@ -78,19 +78,20 @@ class ExportCTC(Operator, ExportHelper):
         if len(candidates) != 1:
             self.errors.append("Invalid number of ctc roots: %d"%len(candidates))
             raise ValueError()
-        fileHead = blendToObj(candidates[0],Header)
+        ctcf = candidates[0]
+        fileHead = blendToObj(ctcf,Header)
         #fileHead["unknownsConstantIntSet"] = [candidates[0]["unknownsConstantIntSet%d"%i] for i in range(3)]
         #fileHead["unknownFloatSet"] = [candidates[0]["unknownFloatSet%d"%i] for i in range(3)]        
-        fileHead["numARecords"] = len(candidates[0].children)
-        fileHead["numBRecords"] = sum((ExportCTC.measureChain(chain) for chain in candidates[0].children))
-        return Header().construct(fileHead),candidates[0]
+        fileHead["numARecords"] = len(ctcf.children)
+        fileHead["numBRecords"] = sum((ExportCTC.measureChain(chain) for chain in ctcf.children))
+        return Header().construct(fileHead),ctcf
         
     @staticmethod
     def getChains(file):
         candidates = [obj for obj in file.children if checkIsChain(obj)]
         chains = []
         for chain in candidates:
-            arecord = blendToObj(candidates[0],ARecord)     
+            arecord = blendToObj(chain,ARecord)     
             #("unknownByteSet","byte[2]"),("unknownByteSetCont","byte[12]"),
             #arecord["unknownByteSet"] = [chain["{Unknown Bytes %02d}"%i] for i in range(2)]
             #arecord["unknownByteSetCont"]  = [chain["{Unknown Bytes %02d}"%i] for i in range(2,14)]
