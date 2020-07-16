@@ -13,7 +13,7 @@ from ..structures.Ccl import CclFile
 import bmesh
 
 def checkIsStarType(candidateStarType):
-    return candidateStarType.type == "EMPTY" and "Type" in candidateStarType
+    return candidateStarType and candidateStarType.type == "EMPTY" and "Type" in candidateStarType
     
 def checkStarType(typing):
     return lambda x: checkIsStarType(x) and x["Type"]==typing

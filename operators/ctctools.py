@@ -120,7 +120,7 @@ checkIsChain = lambda x: checkStarType("CTC_Chain")(x) and checkChildren(x)
 checkIsNode = lambda x: checkStarType("CTC_Node")(x) and checkChildren(x)
 checkIsChainStart = lambda x:checkIsNode(x) and x.parent and checkIsChain(x.parent)
 checkIsChainEnd = lambda x:checkIsNode(x) and len([w for w in x.children if checkIsNode(w)]) == 0
-checkIsBone = lambda x: x.type == "EMPTY" and "boneFunction" in x
+checkIsBone = lambda x: x and x.type == "EMPTY" and "boneFunction" in x
 
 def getUpperChain(chainEnd):
     if chainEnd.parent and checkIsNode(chainEnd.parent) :
