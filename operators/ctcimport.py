@@ -10,7 +10,8 @@ from bpy.props import StringProperty, BoolProperty, EnumProperty
 from bpy.types import Operator
 from ..structures.Ctc import CtcFile, Header, ARecord, BRecord
 from ..operators.ccltools import findFunction
-from ..operators.ctctools import createCTCHeader, createChain, createCTCNode
+from ..operators.ctctools import (createCTCHeader, createChain, createCTCNode,
+                                      breakHeader,breakChainHeader,breakNode)
 
 class BoneFunctionError(Exception):
     pass
@@ -36,24 +37,6 @@ class ImportCTC(Operator, ImportHelper):
             default = "Null"
             )    
     
-    @staticmethod
-    def breakObj(obj,clss):
-        return [(obj.renameScheme[prop] if hasattr(obj,"renameScheme") and prop in obj.renameScheme else prop,
-                 getattr(obj,prop))
-                for prop in clss.fields]# if prop not in clss.hide
-    
-    @staticmethod
-    def breakHeader(header):
-        return ImportCTC.breakObj(header,Header)
-        
-    @staticmethod
-    def breakChainHeader(chain):
-        return ImportCTC.breakObj(chain,ARecord)
-        
-    @staticmethod
-    def breakNode(node):
-        return ImportCTC.breakObj(node,BRecord)
-    
     def createRecordNode(self, node):
         missingFunction = False
         try:
@@ -76,7 +59,7 @@ class ImportCTC(Operator, ImportHelper):
         return result
 
     def createRecordChain(self, chain):
-        chainmeta = createChain(*self.breakChainHeader(chain.chain))
+        chainmeta = createChain(*breakChainHeader(chain.chain))
         parent = chainmeta
         for node in chain:
             try:
@@ -137,7 +120,7 @@ class ImportCTC(Operator, ImportHelper):
             self.displayErrors(self.ErrorMessages)
             return {'FINISHED'}
         header = ctc.Header
-        ctchead = createCTCHeader(*self.breakHeader(header))
+        ctchead = createCTCHeader(*breakHeader(header))
         for chain in ctc:
             ctcchain = self.createRecordChain(chain)
             ctcchain.parent = ctchead

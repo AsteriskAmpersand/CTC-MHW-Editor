@@ -17,6 +17,28 @@ from ..operators.ccltools import findFunction,checkSubStarType,checkStarType,che
 from ..structures.Ctc import ARecord,BRecord,Header
 accessScale = lambda scaleVector: scaleVector[0]
 
+    
+def rename(tuples,clss):
+    return [(clss.renameScheme[prop] if hasattr(clss,"renameScheme") and prop in clss.renameScheme else prop,val)
+            for prop,val in tuples]# if prop not in clss.hide
+
+def breakObj(obj,clss):
+    return [(obj.renameScheme[prop] if hasattr(obj,"renameScheme") and prop in obj.renameScheme else prop,
+             getattr(obj,prop))
+            for prop in clss.fields]# if prop not in clss.hide
+
+
+def breakHeader(header):
+    return breakObj(header,Header)
+    
+
+def breakChainHeader(chain):
+    return breakObj(chain,ARecord)
+    
+
+def breakNode(node):
+    return breakObj(node,BRecord)
+
 def writeProp(obj,propName,prop):
     try:
         if type(prop) is str:
@@ -64,6 +86,8 @@ def createChain(*args):
     chain.empty_draw_type = "CIRCLE"
     chain.show_x_ray = True
     for name,prop in args:
+        print(name)
+        print(prop)
         writeProp(chain,name,prop)
     return chain
 
@@ -269,6 +293,11 @@ class chainFromSelection(bpy.types.Operator):
             description = "Weight Dynamics Type Enumeration Index.",
             default = 39
             )
+    lod = IntProperty(
+            name = "Level of Detail",
+            description = "Level of Detail index on which the physics are calculated",
+            default = -1
+            )
     ubs = EnumProperty(
             name = "Unknown Byte Pair",
             description = "Unknown Pair of data as Bytes",
@@ -325,22 +354,27 @@ class chainFromSelection(bpy.types.Operator):
     wm = FloatProperty(
             name = "Wind Multiplier",
             description = "Strength of wind on Chain",
-            default = 0.7
-            )
-    lod = IntProperty(
-            name = "Level of Detail",
-            description = "Level of Detail index on which the physics are calculated.",
-            default = 65535
+            default = 1.0
             )
     
     def buildChain(self,selection, chainStart):
+        chain = []
         parent = chainStart
+        first = True
         for bone in bpy.selection:
-            node = createCTCNode(bone,1,Matrix.Identity(4))
+            bprop = BRecord.defaultProperties
+            if first:
+                first = False
+                bprop["fixedEnd"]=True
+            node = createCTCNode(bone,1,Matrix.Identity(4),*bprop.items())
             node.parent = parent
             bpy.context.scene.update()
             node.constraints["Bone Function"].inverse_matrix = parent.matrix_world.inverted()
             parent = node
+            chain.append(node)
+        for (parent,nextParent),(node,nextNode) in zip(zip(bpy.selection,bpy.selection[1:]),
+                                                         zip(chain,chain[1:])):
+            orientToActive.orientVectorSystem(node,nextParent,Vector([1,0,0]),parent)
     
     @classmethod
     def poll(cls,context):
@@ -353,13 +387,19 @@ class chainFromSelection(bpy.types.Operator):
     def execute(self,context):
         selection = bpy.selection
         #self.validate(selection)
-        chainStart = createChain(*zip(ARecord.fields,[-1,self.col,self.w,
-                                 eval(self.ubs),[-1]*4,[1,0,0,0],[1,0,0,0],
-                                 [-51]*12,
-                                 self.xg,self.yg,self.zg,0.0,
-                                 self.xi,self.yi,self.zi,
-                                 self.uf1,self.uf2,self.uf3,
-                                 self.wm,self.lod]))
+        arecord = ARecord.defaultProperties.copy()
+        arecord["collision"] = self.col
+        arecord["weightiness"] = self.w
+        arecord["unknownByteSet"] = eval(self.ubs)
+        arecord["xGravity"] = self.xg
+        arecord["yGravity"] = self.yg
+        arecord["zGravity"] = self.zg
+        arecord["unknownFloatTwo"] = self.uf1
+        arecord["unknownFloatThree"] = self.uf2
+        arecord["unknownFloatFour"] = self.uf3
+        arecord["windMultiplier"] = self.wm
+        arecord["lod"] = self.lod
+        chainStart = createChain(*rename(arecord.items(),ARecord))
         self.buildChain(selection,chainStart)
         return {"FINISHED"}
     
@@ -419,9 +459,15 @@ class nodeFromActive(bpy.types.Operator):
     
     def execute(self,context):
         rootco = bpy.context.active_object
-        createCTCNode(rootco,self.radius,Matrix.Identity(4),*zip(BRecord.fields,
-                          [[0,0],self.fixed,eval(self.ubst),rootco["boneFunction"],
-                           self.unk50,[0,0,0],self.radius,[self.unkFS0,self.unkFS1,self.unkFS2],1.0,[-51]*12]))
+        bprop = BRecord.defaultProperties.copy()
+        bprop["fixedEnd"] = self.fixed
+        bprop["unknownByteSetTwo"] = eval(self.ubst)
+        bprop["boneFunctionID"] = rootco["boneFunction"],
+        bprop["unknown50"] = self.unk50
+        bprop["radius"] = self.radius
+        bprop["unknownFloatSet"] = [self.unkFS0,self.unkFS1,self.unkFS2]
+        createCTCNode(rootco,self.radius,Matrix.Identity(4),*bprop.items())
+        
         return {"FINISHED"}
 
 def getRoot(currentNode):
@@ -472,12 +518,15 @@ class orientToActive(bpy.types.Operator):
         selection = [obj for obj in bpy.context.selected_objects if obj != active]
         return active and selection and all(map(lambda x: (checkIsNode(x) and getStarFrame(x) is not None) or checkIsStarFrame(x),selection))
     
-    def orientVectorSystem(self,obj,target,axis):
+    @staticmethod
+    def orientVectorSystem(obj,target,axis,origin = None):
         star = obj if checkIsStarFrame(obj) else getStarFrame(obj)
+        if origin is None:
+            origin = star
         sscale = star.empty_draw_size*accessScale(star.matrix_world.to_scale())
         star.empty_draw_size = sscale
         loc = star.location
-        targetVector = target.matrix_world.translation-star.matrix_world.translation
+        targetVector = target.matrix_world.translation-origin.matrix_world.translation
         M = orientVectorPair(axis,targetVector)
         star.matrix_local = M.to_4x4()
         star.location = loc
@@ -748,7 +797,7 @@ class ctcAnon(bpy.types.Operator):
     bl_description = 'Sets free-physics bones to annoynimized functions.'
     bl_options = {"REGISTER", "PRESET", "UNDO"}   
 
-    annon = bpy.props.StringProperty(
+    annon = StringProperty(
                         name = 'Anonymized ID',
                         description = 'Anonymized ID to use.',
                         default = "CTC_Annon_Function",
@@ -776,12 +825,12 @@ class ctcDeanon(bpy.types.Operator):
     bl_description = 'Assigns fixed ids to annonymized free-physics bones.'
     bl_options = {"REGISTER", "PRESET", "UNDO"}   
 
-    annon = bpy.props.IntProperty(
+    annon = IntProperty(
                         name = 'Starting ID',
                         description = 'Starting ID to use.',
                         default = 0,
                         )
-    only = bpy.props.BoolProperty(
+    only = BoolProperty(
                         name = 'Limit to Annonymized Functions',
                         description = 'Only rename annonymized functions.',
                         default = True,

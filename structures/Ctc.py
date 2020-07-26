@@ -35,7 +35,7 @@ class Header(PyCStruct):
 	("windMultLow","float"),
 	("windMultHigh","float"),
 	("unknownFloatSet","float[3]"),
-	("fixedBytes","byte[6]"),
+	("fixedBytes","byte[6]"),#(1,1,1,1,1,1)
     ("cursedBytes","byte[2]"),#0 0 #1 0
     ])
     hide = ["filetype","numARecords","numBRecords","fixedBytes"]
@@ -79,16 +79,41 @@ class ARecord(PyCStruct):
 	("xGravity","float"),
 	("yGravity","float"),
 	("zGravity","float"),
-	("zeroFloat","float"),
-	("snapping","float"),
-	("coneLimit","float"),
-	("tension","float"),
+	("zeroFloat","float"),#0
+	("snapping","float"),#[0,1]
+	("coneLimit","float"),#[0,1]
+	("tension","float"),#[0,1]
 	("unknownFloatTwo","float"),#100 Usually
 	("unknownFloatThree","float"),#0 Usually
 	("unknownFloatFour","float"),#0.1 Usually
 	("windMultiplier","float"),
-	("lod","int"),])
-    hide = ["chainLength","fixedNegativeOne","oneZeroZeroZero1","oneZeroZeroZero2","unknownByteSetCont"]
+    ("lod","short"),
+	("spacer","ushort"),])
+    hide = ["chainLength","fixedNegativeOne",
+            "oneZeroZeroZero1","oneZeroZeroZero2",
+            "unknownByteSetCont","zeroFloat","spacer"]
+    default = {"chainLength":0,
+               "collision":4,
+               "weightiness":49,
+               "unknownByteSet":(0,0),
+               "fixedNegativeOne":[-1]*4,
+               "oneZeroZeroZero1":[1,0,0,0],
+               "oneZeroZeroZero2":[1,0,0,0],  
+               "unknownByteSetCont":[-51]*12,
+               "xGravity":0,
+               "yGravity":-980,
+               "zGravity":0,               
+               "zeroFloat":0,
+               "snapping":0.25,
+               "coneLimit":1,
+               "tension":0.25,
+               "unknownFloatTwo":100,
+               "unknownFloatThree":0,
+               "unknownFloatFour":0.1,
+               "windMultiplier":1.0,
+               "spacer":0xcdcd,
+               "lod":-1,
+            }
     
     def construct(self,data):
         #data["fixedNegativeOne"] = [-1]*4
@@ -118,7 +143,8 @@ class ARecord(PyCStruct):
                 "zeroFloat":"{Zero Float}",
             	"unknownFloatTwo":"{Unknown Float 00}",#100 Normally
             	"unknownFloatThree":"{Unknown Float 01}",#0 Normally
-            	"unknownFloatFour":"{Unknown Float 02}"#0.1 Normally
+            	"unknownFloatFour":"{Unknown Float 02}",#0.1 Normally
+                "spacer":"{cdcd}"#cdcd always
             }
     reverseScheme = {value:key for key, value in renameScheme.items()}
     
@@ -155,7 +181,21 @@ class BRecord(PyCStruct):
     
     hide = ["m00","m01","m02","m03", "m10","m11","m12","m13",
             "m20","m21","m22","m23", "m30","m31","m32","m33",
+            "boneFunctionID","radius",
             "zeroSet1","zeroSet3","oneFloat","unknownExtendedByteSet"]
+    
+    default = {**{"m%d%d"%(i,j):1*(i==j) for i in range(4) for j in range(4)},
+            "zeroSet1":[0,0],
+            "fixedEnd":0,
+            "unknownByteSetTwo":(0,0,0,0,0),
+            "boneFunctionID":0,
+            "unknown50":54,
+            "zeroSet3":[0,0,0],
+            "radius":1,
+            "unknownFloatSet":(1,1,1),
+            "oneFloat":1,
+            "unknownExtendedByteSet":[-51]*12,            
+            }
     
     renameScheme = {
             **{h:"{%s}:"%(str(h)) for h in hide},
@@ -228,9 +268,10 @@ if __name__ == "__main__":
               "unknownConstantInt":set(),
               "unknownFloatSet":set(),
               "fixedBytes":set()}
-    acheck = {"unknownFloatTwo":set(),"unknownFloatThree":set(),"unknownFloatFour":set(),"zeroFloat":set(),
-              "unknownByteSet":set(),"unknownByteSetCont":set(),"fixedNegativeOne":set(),"oneZeroZeroZero1":set(),
-              "oneZeroZeroZero2":set(),"coneLimit":set()}
+    acheck = {field:set() for field in ARecord.fields.keys()}
+            #unknownFloatTwo":set(),"unknownFloatThree":set(),"unknownFloatFour":set(),"zeroFloat":set(),
+            #"unknownByteSet":set(),"unknownByteSetCont":set(),"fixedNegativeOne":set(),"oneZeroZeroZero1":set(),
+            #"oneZeroZeroZero2":set(),"coneLimit":set()}
     bcheck = {"unknownFloatSet":set(),"unknown50":set(),
               "m03":set(),"m13":set(),"m23":set(),"m33":set(),"unknownByteSetTwo":set(),
               "zeroSet1":set(),"zeroSet3":set(),"oneFloat":set(),"unknownExtendedByteSet":set()}
