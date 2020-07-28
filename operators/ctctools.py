@@ -86,8 +86,6 @@ def createChain(*args):
     chain.empty_draw_type = "CIRCLE"
     chain.show_x_ray = True
     for name,prop in args:
-        print(name)
-        print(prop)
         writeProp(chain,name,prop)
     return chain
 
@@ -372,8 +370,7 @@ class chainFromSelection(bpy.types.Operator):
             node.constraints["Bone Function"].inverse_matrix = parent.matrix_world.inverted()
             parent = node
             chain.append(node)
-        for (parent,nextParent),(node,nextNode) in zip(zip(bpy.selection,bpy.selection[1:]),
-                                                         zip(chain,chain[1:])):
+        for (parent,nextParent),(node,nextNode) in zip(zip(bpy.selection,bpy.selection[1:]),zip(chain,chain[1:])):                                                         
             orientToActive.orientVectorSystem(node,nextParent,Vector([1,0,0]),parent)
     
     @classmethod

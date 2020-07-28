@@ -44,7 +44,7 @@ class ImportCTC(Operator, ImportHelper):
         except:
             rootco = None
             missingFunction = True
-        result = createCTCNode(rootco,node.radius,node.Matrix,*ImportCTC.breakNode(node))
+        result = createCTCNode(rootco,node.radius,node.Matrix,*breakNode(node))
         
         if missingFunction:
             if self.missingFunctionBehaviour == "Abort":
