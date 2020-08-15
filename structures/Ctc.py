@@ -39,10 +39,13 @@ class Header(PyCStruct):
     ("cursedBytes","byte[2]"),#0 0 #1 0
     ])
     hide = ["filetype","numARecords","numBRecords","fixedBytes"]
+    default = {"filetype":"CTC\x00",
+               "fixedBytes":(1,1,1,1,1,1),
+            }
     
     def construct(self,data):
         data["filetype"]="CTC\x00"
-        #data["fixedBytes"]=[1,1,1,1,1,1,0,0]
+        #data["fixedBytes"]=[1,1,1,1,1,1]
         super().construct(data)
         return self
     
@@ -264,10 +267,7 @@ def ifIn(key,val,dictList):
 
 if __name__ == "__main__":
     from pathlib import Path
-    checks = {"unknownsConstantIntSet":set(),
-              "unknownConstantInt":set(),
-              "unknownFloatSet":set(),
-              "fixedBytes":set()}
+    checks = {field:set() for field in Header.fields.keys()}
     acheck = {field:set() for field in ARecord.fields.keys()}
             #unknownFloatTwo":set(),"unknownFloatThree":set(),"unknownFloatFour":set(),"zeroFloat":set(),
             #"unknownByteSet":set(),"unknownByteSetCont":set(),"fixedNegativeOne":set(),"oneZeroZeroZero1":set(),

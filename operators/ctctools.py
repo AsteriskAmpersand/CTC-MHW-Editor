@@ -189,8 +189,8 @@ class createCTC(bpy.types.Operator):
             name = "Unknown Int Set",
             description = "Set of 4 Unknown Ints",
             items = [
-                    ('(27, 143, 140)', "(27, 143, 140)", ""),
-                    ('(27, 0, 1000)', "(27, 0, 100)", ""),
+                    ('(28, 143, 140)', "(28, 143, 140)", ""),
+                    ('(28, 0, 1000)', "(28, 0, 100)", ""),
                     ]
             )
     uci = EnumProperty(
@@ -198,10 +198,17 @@ class createCTC(bpy.types.Operator):
             description = "Unknown Int with Flag Structure",
             items = [
                     ('0', "00000000 00000000 00000000 00000000", ""),
+                    ('16', "00000000 00000000 00000000 00010000", ""),
                     ('64', "00000000 00000000 00000000 01000000", ""),
-                    ('4160', "00000000 00000000 00000000 00000000", ""),
-                    ('8256', "00000000 00000000 00000000 01000000", ""),
+                    ('68', "00000000 00000000 00000000 01000100", ""),
+                    ('4096', "00000000 00000000 00010000 00000000", ""),
+                    ('4160', "00000000 00000000 00010000 01000000", ""),
+                    ('8256', "00000000 00000000 00100000 01000000", ""),
+                    ('8272', "00000000 00000000 00100000 01010000", ""),
+                    ('262224', "00000000 00000100 00000000 01010000", ""),
+                    ('4194304', "00000000 01000000 00000000 00000000", ""),
                     ('268435456', "00010000 00000000 00000000 00000000", ""),
+                    ('268435536', "00010000 00000000 00000000 01010000", ""),
                     ])
     ticks = FloatProperty(
             name = "Update Frequency",
@@ -246,33 +253,43 @@ class createCTC(bpy.types.Operator):
     uf1 = FloatProperty(
             name = "Unknown Float 1",
             description = "Unknown Float Value.",
-            default = 0.2
+            default = 1.0
             )
     uf2 = FloatProperty(
             name = "Unknown Float 2",
             description = "Unknown Float Value.",
-            default = 0.3
+            default = 2.0
             )    
     uf3 = FloatProperty(
             name = "Unknown Float 3",
             description = "Unknown Float Value.",
-            default = 0.2
+            default = 2.0
+            )    
+    cur = IntProperty(
+            name = "Cursed Byte",
+            description = "Unknown Cursed Byte.",
+            default = 1
             )    
     
     def execute(self,context):
         ufs = self.uf1, self.uf2, self.uf3
         createCTCHeader(
-                eval(self.ucis),
-                eval(self.uci),
-                self.ticks,
-                self.pose,
-                self.damp,
-                self.react,
-                self.grav,
-                self.windM,
-                self.windL,
-                self.windH,
-                ufs)
+                *rename([
+                ("filetype","CTC")
+                ("unknownsConstantIntSet",eval(self.ucis)),
+                ("unknownConstantInt",eval(self.uci)),
+                ("updateTicks",self.ticks),
+                ("poseSnapping",self.pose),
+                ("chainDamping",self.damp),
+                ("reactionSpeed",self.react),
+                ("gravityMult",self.grav),
+                ("windMultMid",self.windM),
+                ("windMultLow",self.windL),
+                ("windMultHigh",self.windH),
+                ("cursedBytes",(self.cur,0)),
+                ("fixedBytes",(1,1,1,1,1,1)),
+                ("unknownFloatSet",(ufs)),
+                ],Header))
         return {"FINISHED"}
     
 class chainFromSelection(bpy.types.Operator):        

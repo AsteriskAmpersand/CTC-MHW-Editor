@@ -79,7 +79,7 @@ class CTCTools(bpy.types.Panel):
         
     def draw_create_tools(self, context, layout):
         col = layout.column(align = True)
-        #col.operator("ctc_tools.create_ctc", icon='MOD_MESHDEFORM', text="Create CTC File")
+        col.operator("ctc_tools.create_ctc", icon='MOD_MESHDEFORM', text="Create CTC File")
         col.operator("ctc_tools.node_from_active", icon='CONSTRAINT_DATA', text="Node from Active")
         col.operator("ctc_tools.chain_from_selection", icon='CONSTRAINT_DATA', text="Chain from Selection")
         col.operator("ctc_tools.orient_to_active", icon='CONSTRAINT_DATA', text="Point Nodes to Active")
