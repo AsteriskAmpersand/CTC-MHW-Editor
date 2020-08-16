@@ -275,7 +275,7 @@ class createCTC(bpy.types.Operator):
         ufs = self.uf1, self.uf2, self.uf3
         createCTCHeader(
                 *rename([
-                ("filetype","CTC")
+                ("filetype","CTC"),
                 ("unknownsConstantIntSet",eval(self.ucis)),
                 ("unknownConstantInt",eval(self.uci)),
                 ("updateTicks",self.ticks),
