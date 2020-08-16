@@ -73,6 +73,14 @@ class ExportCTC(Operator, ExportHelper):
             count += 1
         return count
     
+    @staticmethod
+    def countChains(header):
+        counting = 0
+        for c in header.children:
+            if checkIsChain(c): 
+                counting += 1
+        return counting
+    
     def getFile(self):
         candidates = [obj for obj in bpy.context.scene.objects if checkIsCTC(obj)]
         if len(candidates) != 1:
@@ -82,7 +90,7 @@ class ExportCTC(Operator, ExportHelper):
         fileHead = blendToObj(ctcf,Header)
         #fileHead["unknownsConstantIntSet"] = [candidates[0]["unknownsConstantIntSet%d"%i] for i in range(3)]
         #fileHead["unknownFloatSet"] = [candidates[0]["unknownFloatSet%d"%i] for i in range(3)]        
-        fileHead["numARecords"] = len(ctcf.children)
+        fileHead["numARecords"] = self.countChains(ctcf)
         fileHead["numBRecords"] = sum((ExportCTC.measureChain(chain) for chain in ctcf.children))
         return Header().construct(fileHead),ctcf
         

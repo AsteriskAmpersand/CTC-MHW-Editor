@@ -336,17 +336,17 @@ class chainFromSelection(bpy.types.Operator):
             description = "Gravity Force along Z Axis.",
             default = 0.0
             )
-    xi = FloatProperty(
+    posesnap = FloatProperty(
             name = "Pose Snapping",
             description = "Restitution Force to Original Position.",
             default = 0.5
             )
-    yi = FloatProperty(
+    conmo = FloatProperty(
             name = "Cone of Motion",
             description = "Suspected Steradian Limitation to Motion.",
             default = 0.5
             )
-    zi = FloatProperty(
+    ten = FloatProperty(
             name = "Tension",
             description = "Restitution Speed to Original Position",
             default = 0.5
@@ -408,6 +408,9 @@ class chainFromSelection(bpy.types.Operator):
         arecord["xGravity"] = self.xg
         arecord["yGravity"] = self.yg
         arecord["zGravity"] = self.zg
+        arecord["snapping"] = self.posesnap
+        arecord["coneLimit"] = self.conmo
+        arecord["tension"] = self.ten
         arecord["unknownFloatTwo"] = self.uf1
         arecord["unknownFloatThree"] = self.uf2
         arecord["unknownFloatFour"] = self.uf3

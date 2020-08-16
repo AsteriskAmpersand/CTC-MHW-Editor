@@ -39,12 +39,12 @@ class Header(PyCStruct):
     ("cursedBytes","byte[2]"),#0 0 #1 0
     ])
     hide = ["filetype","numARecords","numBRecords","fixedBytes"]
-    default = {"filetype":"CTC\x00",
+    defaultProperties = {"filetype":"CTC\x00",
                "fixedBytes":(1,1,1,1,1,1),
             }
     
     def construct(self,data):
-        data["filetype"]="CTC\x00"
+        #data["filetype"]="CTC\x00"
         #data["fixedBytes"]=[1,1,1,1,1,1]
         super().construct(data)
         return self
@@ -52,6 +52,7 @@ class Header(PyCStruct):
     renameScheme = {
             "updateTicks":"Update Frequency (frames)",
             "gravityMult":"Gravity Multiplier",
+            "poseSnapping": "Pose Snapping",
             "reactionSpeed":"Reaction Speed",
             "chainDamping":"Dampening",
             "windMultLow":"Low Wind Effect",
@@ -95,7 +96,7 @@ class ARecord(PyCStruct):
     hide = ["chainLength","fixedNegativeOne",
             "oneZeroZeroZero1","oneZeroZeroZero2",
             "unknownByteSetCont","zeroFloat","spacer"]
-    default = {"chainLength":0,
+    defaultProperties = {"chainLength":0,
                "collision":4,
                "weightiness":49,
                "unknownByteSet":(0,0),
@@ -123,7 +124,10 @@ class ARecord(PyCStruct):
         #data["oneZeroZeroZero1"] = [1,0,0,0]
         #data["oneZeroZeroZero2"] = [1,0,0,0]
         #data["zeroFloat"] = 0.0
+        #print(data)
         super().construct(data)
+        #for field in self.fields:
+        #    print (getattr(self,field))
         return self
     
     renameScheme = {
@@ -187,7 +191,7 @@ class BRecord(PyCStruct):
             "boneFunctionID","radius",
             "zeroSet1","zeroSet3","oneFloat","unknownExtendedByteSet"]
     
-    default = {**{"m%d%d"%(i,j):1*(i==j) for i in range(4) for j in range(4)},
+    defaultProperties = {**{"m%d%d"%(i,j):1*(i==j) for i in range(4) for j in range(4)},
             "zeroSet1":[0,0],
             "fixedEnd":0,
             "unknownByteSetTwo":(0,0,0,0,0),

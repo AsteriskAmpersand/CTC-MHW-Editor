@@ -156,8 +156,16 @@ class Cstruct():
     def marshall(self, data):
         return {varName:typeOperator['deserializer'](data.read(typeOperator['size'])) for varName, typeOperator in self.struct.items()}
     
+    def singleVarSerialize(self, typeOperator, data, varName):
+        try:
+            return typeOperator['serializer'](data[varName])
+        except:
+            print("%s with value %s not compatible"%(
+                    varName,str(data[varName]) if varName in data else "Missing"))
+            raise
+            
     def serialize(self, data):
-        return b''.join([typeOperator['serializer'](data[varName]) for varName, typeOperator in self.struct.items()])
+        return b''.join([self.singleVarSerialize(typeOperator,data,varName) for varName, typeOperator in self.struct.items()])
 
 class RegisteredClass(type):
     def __new__(cls, clsname, superclasses, attributedict):
@@ -201,7 +209,7 @@ class PyCStruct(metaclass = RegisteredClass):
     requiredProperties = {}
     def construct(self,data):
         for field in self.fields:
-            if field in data:
+            if field in data and data[field] is not None:
                 self.__setattr__(field,data[field])
             elif field in self.defaultProperties:
                 self.__setattr__(field,self.defaultProperties[field])
