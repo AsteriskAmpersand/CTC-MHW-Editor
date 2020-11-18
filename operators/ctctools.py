@@ -12,9 +12,12 @@ selection_utils.selected #selection in order
 """
 import bpy
 from mathutils import Vector, Matrix
-from bpy.props import IntProperty, StringProperty, BoolProperty, EnumProperty, FloatProperty
+from bpy.props import IntProperty, StringProperty, BoolProperty, EnumProperty, FloatProperty, PointerProperty
 from ..operators.ccltools import findFunction,checkSubStarType,checkStarType,checkIsStarType
 from ..structures.Ctc import ARecord,BRecord,Header
+import os
+import json
+import copy
 accessScale = lambda scaleVector: scaleVector[0]
 
     
@@ -372,7 +375,8 @@ class chainFromSelection(bpy.types.Operator):
             default = 1.0
             )
     
-    def buildChain(self,selection, chainStart):
+    @staticmethod
+    def buildChain(selection, chainStart):
         chain = []
         parent = chainStart
         first = True
@@ -417,7 +421,7 @@ class chainFromSelection(bpy.types.Operator):
         arecord["windMultiplier"] = self.wm
         arecord["lod"] = self.lod
         chainStart = createChain(*rename(arecord.items(),ARecord))
-        self.buildChain(selection,chainStart)
+        chainFromSelection.buildChain(selection,chainStart)
         return {"FINISHED"}
     
 class nodeFromActive(bpy.types.Operator):        
@@ -923,4 +927,344 @@ class showCTC(bpy.types.Operator):
         for empty in [obj for obj in bpy.context.scene.objects 
                       if obj.type == "EMPTY" and checkIsSubCTC(obj)]:
             empty.hide = False
+        return {"FINISHED"}
+    
+checkIsArmatureRoot = checkStarType("MOD3_SkeletonRoot")
+def pollValidEmpty(self,obj):
+    return checkIsArmatureRoot(obj)
+
+class toJSon(bpy.types.Operator):
+    bl_idname = 'ctc_tools.chain_to_json'
+    bl_label = 'DevTool: Print chain to console as json.'
+    bl_description = 'DevTool: Converts currently selected chain into a json.'
+    bl_options = {"REGISTER", "UNDO"}
+    
+    name = StringProperty(
+                        name = 'Chain Name',
+                        description = 'Name for the Chain.',
+                        default = "Chain.000",
+                        )
+    
+    def jsonHeader(self,head):
+        return {prop:head[prop] for prop in head.keys() if "{" not in prop}
+        
+    def parseNode(self,node):
+        if not node:
+            return []
+        nodes = []
+        frame = getStarFrame(node)
+        validProperties = {prop:frame[prop] for prop in frame.keys() if "{" not in prop}
+        nodes.append(validProperties)
+        return nodes + self.parseNode(getChild(node))
+    
+    def getFunction(self,chain):
+        start = getChild(chain)
+        try:
+            return start.constraints["Bone Function"].parent.target["boneFunction"]
+        except:
+            return -1
+    
+    def execute(self,context):
+        result = {}
+        chain = bpy.context.active_object
+        header = self.jsonHeader(chain)
+        nodes = self.parseNode(getChild(chain))
+        functionParent = self.getFunction(chain)
+        result = {"name":self.name,"parent":functionParent,"header":header,"nodes":nodes}
+        print(str(result).replace("'",'"'))
+        return {"FINISHED"}
+    
+    @classmethod
+    def poll(cls,context):
+        return bpy.context.active_object and checkIsChain(bpy.context.active_object)
+
+chainPresets = []
+presetSize = 0
+
+class PresetLoop():
+    def __init__(self,listing):
+        self.cur = 0
+        self.listing = listing
+    def __next__(self):
+        item = self.listing[self.cur]
+        if self.cur+1 < len(self.listing):self.cur += 1
+        return item
+
+class CTCPreset():
+    def __init__(self,preset_obj):
+        self.chain_definition = preset_obj["header"]
+        self.display_name = preset_obj["name"]
+        self.description = preset_obj["description"] if "description" in preset_obj else "Ctc Preset"
+        self.parent = int(preset_obj["parent"])
+        self.allNodes = preset_obj["nodes"]
+    def name(self):
+        return self.display_name
+    def enumDisplay(self):
+        return (self.name(),self.name(),self.description)
+    def rootID(self): return self.parent
+    def bodyNodes(self):return self.allNodes[:-1]
+    def endNode(self):return self.allNodes[-1]
+    def __iter__(self):
+        return PresetLoop(self.bodyNodes())
+    
+currentPresetSize = 0
+script_file = os.path.realpath(__file__)
+directory =  os.path.dirname(os.path.dirname(script_file))
+presetFile = directory+"\\"+"CTCPresets.json"
+def initializePresets():
+    global currentPresetSize
+    presets = []
+    if os.path.exists(presetFile):
+        file = open(presetFile,"r")
+        presets = [CTCPreset(preset) for preset in json.load(file)["presets"]]
+        presets = {p.name():p for p in sorted(presets,key=lambda x: x.name())}
+        currentPresetSize = os.stat(presetFile).st_size
+    return presets
+    
+preset = initializePresets()
+def getPresets(ctx,obj,*args,**kwargs):
+    if os.path.exists(presetFile):
+        global currentPresetSize 
+        size = os.stat(presetFile).st_size
+        if currentPresetSize != size:
+            global preset
+            preset = initializePresets()
+            currentPresetSize = size
+    return [p.enumDisplay() for p in preset.values()]
+    #print (preset)
+
+def findPreset(presetString):
+    return preset[presetString]
+
+def getChainFrames(chain):
+    node = getChild(chain)
+    results = []
+    while node != None:
+        frame = getStarFrame(node)
+        results.append(frame)
+        node = getChild(node)
+    return results
+
+class applyPreset(bpy.types.Operator):
+    bl_idname = 'ctc_tools.apply_preset'
+    bl_label = 'Apply ctc preset to chains.'
+    bl_description = 'Applies preset to selected ctc chains.'
+    bl_options = {"REGISTER", "UNDO"}
+
+    preset = EnumProperty(
+        name = "Preset Properties",
+        description = "Load a preset for chain properties.",
+        items = getPresets,
+        )    
+
+    @staticmethod
+    def applyPreset(chain,preset):
+        for key,val in preset.chain_definition.items():
+            chain[key] = val
+        selection = getChainFrames(chain)
+        for bone,presetEntry in list(zip(selection[:-1],preset))+[(selection[-1],preset.endNode())]:
+            for key,val in presetEntry.items():
+                bone[key] = val
+    
+    def execute(self,context):
+        selection = [entry for entry in bpy.context.scene.objects if entry.select]
+        for entry in selection:
+            if checkIsChain(entry):
+                self.applyPreset(entry,findPreset(self.preset))
+        return {"FINISHED"}
+
+    @classmethod
+    def poll(cls,ctx):
+        return False    
+
+    #@classmethod
+    #def poll(cls,context):
+    #    return bpy.context.active_object and checkIsChain(bpy.context.active_object)
+
+def createEmpty(name,position):
+    o = bpy.data.objects.new( name, None )
+    bpy.context.scene.objects.link( o )
+    #print(position)
+    o.location = position
+    #print(o.location)
+    return o    
+
+def validEmpties(ctx,obj):
+    return [(empty.name,empty.name,"Empty Armature") for empty in bpy.context.scene.objects if pollValidEmpty(ctx,empty)]
+        
+
+class convertArmature(bpy.types.Operator):
+    bl_idname = 'ctc_tools.armature_to_ctc'
+    bl_label = 'Convert Blender Armature and Meshes to CTC'
+    bl_description = 'Converts Blender Armatures and Meshes to CTC Nodes and appends them to an Empty Hierarchy'
+    bl_options = {"REGISTER", "UNDO"}
+    
+    emptyArmature = EnumProperty(
+        name = "Empty Armature",
+        description = "Armature to which the hair ctc strands will be appended to.",
+        items = validEmpties,
+        )
+    preset = EnumProperty(
+        name = "Preset Properties",
+        description = "Load a preset for chain properties.",
+        items = getPresets,
+        )
+    startIndex = IntProperty(name = "Starting Bone Function.",
+        description = "Set index from which bone's Bone Function will start being autogenerated.",
+        default = 150)
+    convertAll = BoolProperty(
+        name = "Convert All",
+        description = "Convert all armatures in the scene",
+        default = False)
+    
+    @classmethod
+    def poll(cls,ctx):
+        return False
+    
+    def invalidFunctions(self,armatureRoot):
+        listing = []
+        if "boneFunction" in armatureRoot:
+            listing.append(armatureRoot["boneFunction"])
+        for child in armatureRoot.children:
+            listing += self.invalidFunctions(child)
+        return listing
+      
+                
+    def strandsFromTips(self,chain):
+        strands = []
+        for tip in [bone for bone in chain.data.edit_bones if not bone.children]:
+            strand = [tip]
+            current = tip.parent
+            while (current):
+                strand.append(current)
+                current = current.parent
+            strands.append(list(reversed(strand)))
+        return strands
+    
+    def getChainPositions(self,chain):
+        strands = []
+        MTF = Matrix([[0,1,0,0],[1,0,0,0],[0,0,-1,0],[0,0,0,-1]])
+        for catena in self.strandsFromTips(chain):
+            positions = []
+            transforms = []
+            names = []
+            for bone in catena:
+                positions.append(chain.matrix_world*bone.head)
+                transforms.append(chain.matrix_world*bone.matrix*MTF)
+                names.append(bone.name)
+            positions.append(chain.matrix_world*bone.tail)
+            m = Matrix.Identity(4)
+            tailPosition = chain.matrix_world*bone.tail
+            for i in range(3): m[i][3] = tailPosition[i]
+            transforms.append(m)
+            names.append(bone.name)#Set format for the "loose" bone
+            strands.append((positions,transforms,names))
+        return strands
+    
+    #unkn2 = 0
+    def emptyChain(self,positions,startIndex,validator,names):
+        current = startIndex
+        parent = None
+        nodes = []
+        namesOut = {}
+        for pos,name in zip(positions,names):
+            empty = createEmpty("CTC_Bone",pos)
+            while not validator(current):
+                current+=1
+            empty["boneFunction"] = current
+            empty["unkn2"] = 0
+            #weakReparent(empty,parent)
+            empty.parent = parent
+            parent = empty
+            nodes.append(empty)
+            namesOut[name] = empty.name
+        bpy.context.scene.update()
+        prevLoc = Vector((0,0,0))
+        for pos,node in zip(positions,nodes):
+            node.location = pos-prevLoc
+            prevLoc = pos
+        return nodes, current, namesOut
+    
+    def createNodes(self,selection,chainStart,preset,orientations):
+        chain = []
+        parent = chainStart 
+        for bone,presetEntry in list(zip(selection[:-1],preset))+[(selection[-1],preset.endNode())]:
+            #if first:
+            #    first = False
+            #    bprop["fixedEnd"]=True
+            node = createCTCNode(bone,1,Matrix.Identity(4),*presetEntry.items())
+            node.parent = parent
+            bpy.context.scene.update()
+            node.constraints["Bone Function"].inverse_matrix = parent.matrix_world.inverted()
+            parent = node
+            chain.append(node)
+        #bpy.context.scene.update()
+        for node,trn in zip(chain,orientations):
+            for i in range(3): trn[i][3] = 0
+            getStarFrame(node).matrix_world = trn
+            getStarFrame(node).location = (0,0,0)
+            #print(trn)
+        #for (parent,nextParent),(node,nextNode) in zip(zip(bpy.selection,bpy.selection[1:]),zip(chain,chain[1:])):                                                         
+        #    orientToActive.orientVectorSystem(node,nextParent,Vector([1,0,0]),parent)
+    
+    def renameMeshes(self,chain,remaps):
+        for child in chain.children:
+            if child.type == "MESH":
+                for g in child.vertex_groups:
+                    if g.name in remaps:
+                        g.name = remaps[g.name]
+    
+    def convertChain(self,chain,startIndex,invalidValues,preset):
+        invalidValues = set(invalidValues)
+        validator = lambda x: x not in invalidValues
+        bpy.context.scene.objects.active = chain
+        bpy.ops.object.mode_set(mode="EDIT")
+        strands = self.getChainPositions(chain)
+        bpy.ops.object.mode_set(mode="OBJECT")
+        for positions,transforms,names in strands:
+            emptyNodes,newStart,nameMapping = self.emptyChain(positions,startIndex,validator,names)
+            self.renameMeshes(chain,nameMapping)
+            chainStart = createChain(*preset.chain_definition.items())
+            self.createNodes(emptyNodes,chainStart,preset,transforms)
+        return emptyNodes[0],newStart
+        
+    def growArmature(self,base,extensions,func):
+        rootbone = self.fetchRoot(base,func)
+        if not rootbone: 
+            rootbone = base
+        for root in extensions:
+            mw = copy.deepcopy(root.matrix_world)
+            root.parent = rootbone
+            root.matrix_world = mw
+    #self.preset.rootID()
+    def fetchRoot(self,base,rootID):
+        if "boneFunction" in base and base["boneFunction"] == rootID:
+            return base
+        for child in base.children:
+            candidate = self.fetchRoot(child,rootID)
+            if candidate:
+                return candidate
+        return None        
+    
+    def findArmature(self,emptyArmatureName):
+        for e in bpy.context.scene.objects:
+            if emptyArmatureName == e.name:
+                return e
+        return None
+    
+    def fetchChains(self):
+        if self.convertAll:
+            return [obj for obj in bpy.context.scene.objects if obj.type == "ARMATURE"]
+        else:
+            return [mesh for mesh in bpy.context.scene.objects if mesh.type == "ARMATURE" and mesh.select]
+    
+    def execute(self,context): 
+        armature = self.findArmature(self.emptyArmature)
+        startPoint = self.startIndex
+        invalidValues = self.invalidFunctions(armature)
+        hairRoots = []
+        for chain in self.fetchChains():
+            root,startPoint = self.convertChain(chain,startPoint,invalidValues,findPreset(self.preset))
+            hairRoots.append(root)
+        self.growArmature(armature,hairRoots,findPreset(self.preset).rootID())
         return {"FINISHED"}

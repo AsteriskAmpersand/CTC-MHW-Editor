@@ -29,7 +29,7 @@ from .operators.ctctools import (findDuplicates, realignChain, #changeNodeTarget
                                  createCTC, chainFromSelection,nodeFromActive,
                                  orientToActive,orientToActiveProjection,
                                  ctcAnon, ctcDeanon, ctcClear, ctcOrphan,
-                                 hideCTC, showCTC,)
+                                 hideCTC, showCTC,toJSon,applyPreset,convertArmature)
 from .operators.ctctoolspanel import CTCTools
 from .operators.ctcmatrixtools import (get_all_matrices,set_all_matrices,
                                         get_rotation_matrices,set_rotation_matrices,
@@ -55,13 +55,13 @@ classes = [Selection,
            createCTC, chainFromSelection, nodeFromActive,
            orientToActive,orientToActiveProjection,
            ctcAnon, ctcDeanon, ctcClear, ctcOrphan,
-           hideCTC, showCTC,
+           hideCTC, showCTC,toJSon,
            get_all_matrices,set_all_matrices,
            get_rotation_matrices,set_rotation_matrices,
            get_translation_matrices,set_translation_matrices,
            get_unknowns,set_unknowns,
            get_chain_data,set_chain_data,
-           hideCCL, showCCL,]
+           hideCCL, showCCL, applyPreset,convertArmature]
 importFunctions = [ccl_import,ctc_import] 
 exportFunctions = [ccl_export,ctc_export] 
 
