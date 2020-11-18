@@ -72,7 +72,7 @@ class PresetLoop():
 
 class CTCPreset():
     def __init__(self,preset_obj):
-        self.header = preset_obj["file_header"]
+        self.file_header = preset_obj["file_header"]
         self.chain_definition = preset_obj["chain_header"]
         self.display_name = preset_obj["name"]
         self.description = preset_obj["description"] if "description" in preset_obj else "Ctc Preset"
@@ -291,7 +291,7 @@ class chainFromSelection(bpy.types.Operator):
         preset = findPreset(self.preset)
         chainStart = createChain(*preset.chain_definition.items())
         chain = chainFromSelection.buildChain(selection,chainStart)
-        applyPreset.applyPreset(chain,preset)
+        applyPreset.applyPreset(chainStart,preset)
         return {"FINISHED"}
     
 class nodeFromActive(bpy.types.Operator):        
@@ -882,7 +882,7 @@ class applyPreset(bpy.types.Operator):
     
     @staticmethod
     def applyHeader(header,preset):
-        for key,val in preset.header.items():
+        for key,val in preset.file_header.items():
             header[key] = val
     
     def execute(self,context):
