@@ -978,7 +978,7 @@ class convertArmature(bpy.types.Operator):
             tailPosition = chain.matrix_world*bone.tail
             for i in range(3): m[i][3] = tailPosition[i]
             transforms.append(m)
-            names.append(bone.name)#Set format for the "loose" bone
+            names.append(bone.name+"[TAIL]")#Set format for the "loose" bone
             strands.append((positions,transforms,names))
         return strands
     
