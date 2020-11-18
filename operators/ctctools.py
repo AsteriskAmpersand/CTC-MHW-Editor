@@ -809,11 +809,11 @@ class toJSon(bpy.types.Operator):
     bl_description = 'DevTool: Converts currently selected chain into a json.'
     bl_options = {"REGISTER", "UNDO"}
     
-    name = StringProperty(
-                        name = 'Chain Name',
-                        description = 'Name for the Chain.',
-                        default = "Chain.000",
-                        )
+    #name = StringProperty(
+    #                    name = 'Chain Name',
+    #                    description = 'Name for the Chain.',
+    #                    default = "Chain.000",
+    #                    )
     
     def jsonHeader(self,head):
         return {prop:head[prop] for prop in head.keys() if "{" not in prop}
@@ -842,7 +842,7 @@ class toJSon(bpy.types.Operator):
         cheader = self.jsonHeader(chain)
         nodes = self.parseNode(getChild(chain))
         functionParent = self.getFunction(chain)
-        result = {"name":self.name,"parent":functionParent,"file_header":header,"chain_header":cheader,"nodes":nodes}
+        result = {"name":chain.name,"parent":functionParent,"file_header":header,"chain_header":cheader,"nodes":nodes}
         print(str(result).replace("'",'"'))
         return {"FINISHED"}
     
