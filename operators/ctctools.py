@@ -843,7 +843,7 @@ class toJSon(bpy.types.Operator):
         nodes = self.parseNode(getChild(chain))
         functionParent = self.getFunction(chain)
         result = {"name":chain.name,"parent":functionParent,"file_header":header,"chain_header":cheader,"nodes":nodes}
-        print(str(result).replace("'",'"'))
+        print(json.dumps(result, indent=1,default=lambda o: '<not serializable>'))
         return {"FINISHED"}
     
     @classmethod
