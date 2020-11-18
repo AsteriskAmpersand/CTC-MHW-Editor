@@ -58,6 +58,65 @@ def fromArray(obj, propName, array):
     for i,propPoint in enumerate(array):
         obj[propName+"%03d"%i]=propPoint
 
+chainPresets = []
+presetSize = 0
+
+class PresetLoop():
+    def __init__(self,listing):
+        self.cur = 0
+        self.listing = listing
+    def __next__(self):
+        item = self.listing[self.cur]
+        if self.cur+1 < len(self.listing):self.cur += 1
+        return item
+
+class CTCPreset():
+    def __init__(self,preset_obj):
+        self.header = preset_obj["file_header"]
+        self.chain_definition = preset_obj["chain_header"]
+        self.display_name = preset_obj["name"]
+        self.description = preset_obj["description"] if "description" in preset_obj else "Ctc Preset"
+        self.parent = int(preset_obj["parent"])
+        self.allNodes = preset_obj["nodes"]
+    def name(self):
+        return self.display_name
+    def enumDisplay(self):
+        return (self.name(),self.name(),self.description)
+    def rootID(self): return self.parent
+    def bodyNodes(self):return self.allNodes[:-1]
+    def endNode(self):return self.allNodes[-1]
+    def __iter__(self):
+        return PresetLoop(self.bodyNodes())
+    
+currentPresetSize = 0
+script_file = os.path.realpath(__file__)
+directory =  os.path.dirname(os.path.dirname(script_file))
+presetFile = directory+"\\"+"CTCPresets.json"
+def initializePresets():
+    global currentPresetSize
+    presets = []
+    if os.path.exists(presetFile):
+        file = open(presetFile,"r")
+        presets = [CTCPreset(preset) for preset in json.load(file)["presets"]]
+        presets = {p.name():p for p in sorted(presets,key=lambda x: x.name())}
+        currentPresetSize = os.stat(presetFile).st_size
+    return presets
+    
+preset = initializePresets()
+def getPresets(ctx,obj,*args,**kwargs):
+    if os.path.exists(presetFile):
+        global currentPresetSize 
+        size = os.stat(presetFile).st_size
+        if currentPresetSize != size:
+            global preset
+            preset = initializePresets()
+            currentPresetSize = size
+    return [p.enumDisplay() for p in preset.values()]
+    #print (preset)
+
+def findPreset(presetString):
+    return preset[presetString]
+
 def createCTCHeader(*args):
     header = bpy.data.objects.new("CtcHeader", None )
     bpy.context.scene.objects.link( header )
@@ -67,17 +126,6 @@ def createCTCHeader(*args):
     header.show_x_ray = True
     for name,prop in args:
         writeProp(header,name,prop)
-    #for i,ucv in enumerate(ucis): header["unknownsConstantIntSet%d"%i] = ucv 
-    #header["unknownConstantInt"] = uci
-    #header["updateTicks"] = ticks
-    #header["poseSnapping"] = pose
-    #header["chainDamping"] = damp
-    #header["reactionSpeed"] = react
-    #header["gravityMult"] = grav
-    #header["windMultMid"] = windM
-    #header["windMultLow"] = windL
-    #header["windMultHigh"] = windH
-    #for i,uf in enumerate(ufs): header["unknownFloatSet%d"%i] = uf
     header["Type"] = "CTC"
     return header
 
@@ -187,112 +235,15 @@ class createCTC(bpy.types.Operator):
     bl_label = "Create CTC Header"
     bl_description = 'Create CTC Header'
     bl_options = {"REGISTER", "UNDO"}
-    
-    ucis = EnumProperty(
-            name = "Unknown Int Set",
-            description = "Set of 4 Unknown Ints",
-            items = [
-                    ('(28, 143, 140)', "(28, 143, 140)", ""),
-                    ('(28, 0, 1000)', "(28, 0, 100)", ""),
-                    ]
-            )
-    uci = EnumProperty(
-            name = "Unknown Int",
-            description = "Unknown Int with Flag Structure",
-            items = [
-                    ('0', "00000000 00000000 00000000 00000000", ""),
-                    ('16', "00000000 00000000 00000000 00010000", ""),
-                    ('64', "00000000 00000000 00000000 01000000", ""),
-                    ('68', "00000000 00000000 00000000 01000100", ""),
-                    ('4096', "00000000 00000000 00010000 00000000", ""),
-                    ('4160', "00000000 00000000 00010000 01000000", ""),
-                    ('8256', "00000000 00000000 00100000 01000000", ""),
-                    ('8272', "00000000 00000000 00100000 01010000", ""),
-                    ('262224', "00000000 00000100 00000000 01010000", ""),
-                    ('4194304', "00000000 01000000 00000000 00000000", ""),
-                    ('268435456', "00010000 00000000 00000000 00000000", ""),
-                    ('268435536', "00010000 00000000 00000000 01010000", ""),
-                    ])
-    ticks = FloatProperty(
-            name = "Update Frequency",
-            description = "Number of seconds between updates.",
-            default = 1/6
-            )
-    pose = FloatProperty(
-            name = "Pose Restitution Factor",
-            description = "Plasticity in returning to the original position.",
-            default = 1.0
-            )
-    damp = FloatProperty(
-            name = "Dampening",
-            description = "Dampening coefficient.",
-            default = 1.0
-            )
-    react = FloatProperty(
-            name = "Reaction Speed",
-            description = "Sensitivity to Movement.",
-            default = 1.0
-            )
-    grav = FloatProperty(
-            name = "Gravity Multiplier",
-            description = "Global multiplier to gravity values.",
-            default = 1.0
-            )
-    windL = FloatProperty(
-            name = "Low Wind Multiplier",
-            description = "Global multiplier to Weak Wind values.",
-            default = 1.0
-            )
-    windM = FloatProperty(
-            name = "Medium Wind Multiplier",
-            description = "Global multiplier to Medium Wind values.",
-            default = 1.0
-            )
-    windH = FloatProperty(
-            name = "High Wind Multiplier",
-            description = "Global multiplier to Strong Wind values.",
-            default = 1.0
-            )
-    uf1 = FloatProperty(
-            name = "Unknown Float 1",
-            description = "Unknown Float Value.",
-            default = 1.0
-            )
-    uf2 = FloatProperty(
-            name = "Unknown Float 2",
-            description = "Unknown Float Value.",
-            default = 2.0
-            )    
-    uf3 = FloatProperty(
-            name = "Unknown Float 3",
-            description = "Unknown Float Value.",
-            default = 2.0
-            )    
-    cur = IntProperty(
-            name = "Cursed Byte",
-            description = "Unknown Cursed Byte.",
-            default = 1
-            )    
-    
+
+    preset = EnumProperty(
+        name = "Preset Properties",
+        description = "Load a preset for chain properties.",
+        items = getPresets,
+        )    
+
     def execute(self,context):
-        ufs = self.uf1, self.uf2, self.uf3
-        createCTCHeader(
-                *rename([
-                ("filetype","CTC"),
-                ("unknownsConstantIntSet",eval(self.ucis)),
-                ("unknownConstantInt",eval(self.uci)),
-                ("updateTicks",self.ticks),
-                ("poseSnapping",self.pose),
-                ("chainDamping",self.damp),
-                ("reactionSpeed",self.react),
-                ("gravityMult",self.grav),
-                ("windMultMid",self.windM),
-                ("windMultLow",self.windL),
-                ("windMultHigh",self.windH),
-                ("cursedBytes",(self.cur,0)),
-                ("fixedBytes",(1,1,1,1,1,1)),
-                ("unknownFloatSet",(ufs)),
-                ],Header))
+        createCTCHeader(*findPreset(self.preset).file_header.items())
         return {"FINISHED"}
     
 class chainFromSelection(bpy.types.Operator):        
@@ -301,80 +252,11 @@ class chainFromSelection(bpy.types.Operator):
     bl_description = 'Create CTC Chain from Selection'
     bl_options = {"REGISTER", "UNDO"}
 
-    col = IntProperty(
-            name = "Collision Type",
-            description = "Collision Type Enumeration Index.",
-            default = 4
-            )
-    w = IntProperty(
-            name = "Weightiness",
-            description = "Weight Dynamics Type Enumeration Index.",
-            default = 39
-            )
-    lod = IntProperty(
-            name = "Level of Detail",
-            description = "Level of Detail index on which the physics are calculated",
-            default = -1
-            )
-    ubs = EnumProperty(
-            name = "Unknown Byte Pair",
-            description = "Unknown Pair of data as Bytes",
-            items = [(str(tuppling),str(tuppling),"") for tuppling in 
-                     [(1, 2), (0, 1), (0, 0), (32, 0), (96, 0), (64, 0), (17, 0), (17, 1), (17, 2), (16, 0), (1, 1), (80, 0), (1, 0), (0, 2), (68, 0), (4, 0)]
-                    ],
-            default = "(0, 0)"
-            )
-    xg = FloatProperty(
-            name = "X-Axis Gravity",
-            description = "Gravity Force along X Axis.",
-            default = 0.0
-            )
-    yg = FloatProperty(
-            name = "Y-Axis Gravity",
-            description = "Gravity Force along Y Axis.",
-            default = -980.0
-            )
-    zg = FloatProperty(
-            name = "Z-Axis Gravity",
-            description = "Gravity Force along Z Axis.",
-            default = 0.0
-            )
-    posesnap = FloatProperty(
-            name = "Pose Snapping",
-            description = "Restitution Force to Original Position.",
-            default = 0.5
-            )
-    conmo = FloatProperty(
-            name = "Cone of Motion",
-            description = "Suspected Steradian Limitation to Motion.",
-            default = 0.5
-            )
-    ten = FloatProperty(
-            name = "Tension",
-            description = "Restitution Speed to Original Position",
-            default = 0.5
-            )
-    uf1 = FloatProperty(
-            name = "Unknown Float 1",
-            description = "Unknown",
-            default = 100.0
-            )
-    uf2 = FloatProperty(
-            name = "Unknown Float 2",
-            description = "Unknown",
-            default = 0.0
-            )
-    uf3 = FloatProperty(
-            name = "Unknown Float 3",
-            description = "Unknown",
-            default = .1
-            )
-    wm = FloatProperty(
-            name = "Wind Multiplier",
-            description = "Strength of wind on Chain",
-            default = 1.0
-            )
-    
+    preset = EnumProperty(
+        name = "Preset Properties",
+        description = "Load a preset for chain properties.",
+        items = getPresets,
+        )    
     @staticmethod
     def buildChain(selection, chainStart):
         chain = []
@@ -393,6 +275,7 @@ class chainFromSelection(bpy.types.Operator):
             chain.append(node)
         for (parent,nextParent),(node,nextNode) in zip(zip(bpy.selection,bpy.selection[1:]),zip(chain,chain[1:])):                                                         
             orientToActive.orientVectorSystem(node,nextParent,Vector([1,0,0]),parent)
+        return chain
     
     @classmethod
     def poll(cls,context):
@@ -405,23 +288,10 @@ class chainFromSelection(bpy.types.Operator):
     def execute(self,context):
         selection = bpy.selection
         #self.validate(selection)
-        arecord = ARecord.defaultProperties.copy()
-        arecord["collision"] = self.col
-        arecord["weightiness"] = self.w
-        arecord["unknownByteSet"] = eval(self.ubs)
-        arecord["xGravity"] = self.xg
-        arecord["yGravity"] = self.yg
-        arecord["zGravity"] = self.zg
-        arecord["snapping"] = self.posesnap
-        arecord["coneLimit"] = self.conmo
-        arecord["tension"] = self.ten
-        arecord["unknownFloatTwo"] = self.uf1
-        arecord["unknownFloatThree"] = self.uf2
-        arecord["unknownFloatFour"] = self.uf3
-        arecord["windMultiplier"] = self.wm
-        arecord["lod"] = self.lod
-        chainStart = createChain(*rename(arecord.items(),ARecord))
-        chainFromSelection.buildChain(selection,chainStart)
+        preset = findPreset(self.preset)
+        chainStart = createChain(*preset.chain_definition.items())
+        chain = chainFromSelection.buildChain(selection,chainStart)
+        applyPreset.applyPreset(chain,preset)
         return {"FINISHED"}
     
 class nodeFromActive(bpy.types.Operator):        
@@ -963,79 +833,22 @@ class toJSon(bpy.types.Operator):
             return start.constraints["Bone Function"].target.parent["boneFunction"]
         except Exception as e:
             #print(e)
-            return -1
+            return -1        
     
     def execute(self,context):
         result = {}
         chain = bpy.context.active_object
-        header = self.jsonHeader(chain)
+        header = self.jsonHeader(chain.parent)
+        cheader = self.jsonHeader(chain)
         nodes = self.parseNode(getChild(chain))
         functionParent = self.getFunction(chain)
-        result = {"name":self.name,"parent":functionParent,"header":header,"nodes":nodes}
+        result = {"name":self.name,"parent":functionParent,"file_header":header,"chain_header":cheader,"nodes":nodes}
         print(str(result).replace("'",'"'))
         return {"FINISHED"}
     
     @classmethod
     def poll(cls,context):
         return bpy.context.active_object and checkIsChain(bpy.context.active_object)
-
-chainPresets = []
-presetSize = 0
-
-class PresetLoop():
-    def __init__(self,listing):
-        self.cur = 0
-        self.listing = listing
-    def __next__(self):
-        item = self.listing[self.cur]
-        if self.cur+1 < len(self.listing):self.cur += 1
-        return item
-
-class CTCPreset():
-    def __init__(self,preset_obj):
-        self.chain_definition = preset_obj["header"]
-        self.display_name = preset_obj["name"]
-        self.description = preset_obj["description"] if "description" in preset_obj else "Ctc Preset"
-        self.parent = int(preset_obj["parent"])
-        self.allNodes = preset_obj["nodes"]
-    def name(self):
-        return self.display_name
-    def enumDisplay(self):
-        return (self.name(),self.name(),self.description)
-    def rootID(self): return self.parent
-    def bodyNodes(self):return self.allNodes[:-1]
-    def endNode(self):return self.allNodes[-1]
-    def __iter__(self):
-        return PresetLoop(self.bodyNodes())
-    
-currentPresetSize = 0
-script_file = os.path.realpath(__file__)
-directory =  os.path.dirname(os.path.dirname(script_file))
-presetFile = directory+"\\"+"CTCPresets.json"
-def initializePresets():
-    global currentPresetSize
-    presets = []
-    if os.path.exists(presetFile):
-        file = open(presetFile,"r")
-        presets = [CTCPreset(preset) for preset in json.load(file)["presets"]]
-        presets = {p.name():p for p in sorted(presets,key=lambda x: x.name())}
-        currentPresetSize = os.stat(presetFile).st_size
-    return presets
-    
-preset = initializePresets()
-def getPresets(ctx,obj,*args,**kwargs):
-    if os.path.exists(presetFile):
-        global currentPresetSize 
-        size = os.stat(presetFile).st_size
-        if currentPresetSize != size:
-            global preset
-            preset = initializePresets()
-            currentPresetSize = size
-    return [p.enumDisplay() for p in preset.values()]
-    #print (preset)
-
-def findPreset(presetString):
-    return preset[presetString]
 
 def getChainFrames(chain):
     node = getChild(chain)
@@ -1067,16 +880,23 @@ class applyPreset(bpy.types.Operator):
             for key,val in presetEntry.items():
                 bone[key] = val
     
+    @staticmethod
+    def applyHeader(header,preset):
+        for key,val in preset.header.items():
+            header[key] = val
+    
     def execute(self,context):
         selection = [entry for entry in bpy.context.scene.objects if entry.select]
         for entry in selection:
             if checkIsChain(entry):
                 self.applyPreset(entry,findPreset(self.preset))
+            if checkIsCTC(entry):
+                self.applyHeader(entry,findPreset(self.preset))
         return {"FINISHED"}
 
-    @classmethod
-    def poll(cls,ctx):
-        return False    
+    #@classmethod
+    #def poll(cls,ctx):
+    #    return False    
 
     #@classmethod
     #def poll(cls,context):
@@ -1118,9 +938,9 @@ class convertArmature(bpy.types.Operator):
         description = "Convert all armatures in the scene",
         default = False)
     
-    @classmethod
-    def poll(cls,ctx):
-        return False
+    #@classmethod
+    #def poll(cls,ctx):
+    #    return False
     
     def invalidFunctions(self,armatureRoot):
         listing = []
