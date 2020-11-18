@@ -960,8 +960,9 @@ class toJSon(bpy.types.Operator):
     def getFunction(self,chain):
         start = getChild(chain)
         try:
-            return start.constraints["Bone Function"].parent.target["boneFunction"]
-        except:
+            return start.constraints["Bone Function"].target.parent["boneFunction"]
+        except Exception as e:
+            #print(e)
             return -1
     
     def execute(self,context):
