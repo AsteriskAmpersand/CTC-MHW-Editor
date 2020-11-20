@@ -41,6 +41,10 @@ class Header(PyCStruct):
     hide = ["filetype","numARecords","numBRecords","fixedBytes"]
     defaultProperties = {"filetype":"CTC\x00",
                "fixedBytes":(1,1,1,1,1,1),
+                "unknownsConstantIntSet":(28,0,1000),
+                "unknownConstantInt":64,
+                "unknownFloatSet":(0.3,0.5,0.2),
+                "cursedBytes":(0,0),         
             }
     
     def construct(self,data):

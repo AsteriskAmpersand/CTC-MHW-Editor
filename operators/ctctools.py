@@ -684,7 +684,7 @@ class findDuplicates(bpy.types.Operator):
             ShowMessageBox("%d Repeated bone functions on CTC chains"%len(repeats), "Repeated Bone Functions", 'ERROR')
             print("%d Repeated Function IDs"%len(repeats))
             for r in repeats:
-                print("\tFunction %d repeated %d times:"%(r,len(functions[r])))
+                print("\tFunction %s repeated %d times:"%(r,len(functions[r])))
                 for n,b in functions[r]:
                     print("\t\t%s -> %s"%(n,b))            
         return {"FINISHED"}
@@ -1080,7 +1080,7 @@ class convertArmature(bpy.types.Operator):
             chainStart = createChain(*preset.chain_definition.items())
             self.createNodes(emptyNodes,chainStart,preset,transforms)
             nodes.append(emptyNodes[0])
-        return nodes[0],newStart
+        return nodes,newStart
         
     def growArmature(self,base,extensions,func):
         rootbone = self.fetchRoot(base,func)
