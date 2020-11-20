@@ -1014,16 +1014,17 @@ class convertArmature(bpy.types.Operator):
         return strands
     
     #unkn2 = 0
-    def emptyChain(self,positions,startIndex,validator,names):
+    def emptyChain(self,positions,startIndex,invalidValues,names):
         current = startIndex
         parent = None
         nodes = []
         namesOut = {}
         for pos,name in zip(positions,names):
             empty = createEmpty("CTC_Bone",pos)
-            while not validator(current):
+            while current in invalidValues:
                 current+=1
             empty["boneFunction"] = current
+            invalidValues.add(current)
             empty["unkn2"] = 0
             #weakReparent(empty,parent)
             empty.parent = parent
@@ -1068,14 +1069,15 @@ class convertArmature(bpy.types.Operator):
     
     def convertChain(self,chain,startIndex,invalidValues,preset):
         invalidValues = set(invalidValues)
-        validator = lambda x: x not in invalidValues
+        #validator = lambda x: x not in invalidValues
         bpy.context.scene.objects.active = chain
         bpy.ops.object.mode_set(mode="EDIT")
         strands = self.getChainPositions(chain)
         bpy.ops.object.mode_set(mode="OBJECT")
         nodes = []
+        newStart = startIndex
         for positions,transforms,names in strands:
-            emptyNodes,newStart,nameMapping = self.emptyChain(positions,startIndex,validator,names)
+            emptyNodes,newStart,nameMapping = self.emptyChain(positions,newStart,invalidValues,names)
             self.renameMeshes(chain,nameMapping)
             chainStart = createChain(*preset.chain_definition.items())
             self.createNodes(emptyNodes,chainStart,preset,transforms)

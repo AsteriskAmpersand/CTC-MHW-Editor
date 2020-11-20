@@ -298,48 +298,56 @@ if __name__ == "__main__":
             return tuple(obj)
         except:
             return obj
-    for ctcf in Path(r"E:\MHW\ChunkG0").rglob("*.ctc"):
+    functions = set()
+    for ctcf in Path(r"E:\MHW\ChunkG0\pl\hair").rglob("*.ctc"):
         ctc = CtcFile(ctcf).data
-        for c in checks:
-            #ifIn(tryTuple(getattr(ctc.Header,c)),ctcf,checks[c])
-            checks[c].add(tryTuple(getattr(ctc.Header,c)))
         for chain in ctc:
-            c = chain.chain
-            for a in acheck:
-                acheck[a].add(tryTuple(getattr(c,a)))
-            #first = True
-            #parentingArray = []
-            #broken = False
+            c = chain.chain 
             for node in chain:
-                #parentingArray.append(node.fixedEnd)
-                #if first:
-                #    first = False
-                #else:
-                #    if node.fixedEnd:
-                #        #exceptor.add(ctcf)
-                #        broken = True
-                #if node.unknownByteSetTwo == [0,2,0,1,1]:
-                #    print(ctcf)
-                for b in bcheck:
-                    bcheck[b].add(tryTuple(getattr(node,b)))
-            #if broken:
-            #    exceptor[str(ctcf)] = parentingArray
-    #for file in exceptor:
-    #    print("%s: %s"%(file,exceptor[file]))
-    #raise
-    for c in checks:
-        print()
-        print(c)
-        print(checks[c])
-    for c in acheck:
-        print()
-        print(c)
-        print(acheck[c])
-    for c in bcheck:
-        print()
-        print(c)
-        print(bcheck[c])
-    
+                functions.add(node.boneFunctionID)
+    print(functions)
+    """
+            ctc = CtcFile(ctcf).data
+            for c in checks:
+                #ifIn(tryTuple(getattr(ctc.Header,c)),ctcf,checks[c])
+                checks[c].add(tryTuple(getattr(ctc.Header,c)))
+            for chain in ctc:
+                c = chain.chain
+                for a in acheck:
+                    acheck[a].add(tryTuple(getattr(c,a)))
+                #first = True
+                #parentingArray = []
+                #broken = False
+                for node in chain:
+                    #parentingArray.append(node.fixedEnd)
+                    #if first:
+                    #    first = False
+                    #else:
+                    #    if node.fixedEnd:
+                    #        #exceptor.add(ctcf)
+                    #        broken = True
+                    #if node.unknownByteSetTwo == [0,2,0,1,1]:
+                    #    print(ctcf)
+                    for b in bcheck:
+                        bcheck[b].add(tryTuple(getattr(node,b)))
+                #if broken:
+                #    exceptor[str(ctcf)] = parentingArray
+        #for file in exceptor:
+        #    print("%s: %s"%(file,exceptor[file]))
+        #raise
+        for c in checks:
+            print()
+            print(c)
+            print(checks[c])
+        for c in acheck:
+            print()
+            print(c)
+            print(acheck[c])
+        for c in bcheck:
+            print()
+            print(c)
+            print(bcheck[c])
+    """
     """
     uci = set()
     ui = set()
