@@ -118,7 +118,7 @@ def getPresets(ctx,obj,*args,**kwargs):
             global preset
             preset = initializePresets()
             currentPresetTime = time
-    return [p.enumDisplay() for p in sorted(preset.values(),key = lambda x: x.name())]
+    return [p.enumDisplay() for p in sorted(preset.values(),key = lambda x: x.name(),reverse=True)]
     #print (preset)
 
 def findPreset(presetString):
