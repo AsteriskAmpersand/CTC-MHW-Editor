@@ -83,7 +83,7 @@ class CTCTools(bpy.types.Panel):
         col.operator("ctc_tools.node_from_active", icon='CONSTRAINT_DATA', text="Node from Active")
         col.operator("ctc_tools.chain_from_selection", icon='CONSTRAINT_DATA', text="Chain from Selection")
         col.operator("ctc_tools.find_duplicates", icon='MOD_MESHDEFORM', text="Find Duplicate IDs")
-        col.operator("ctc_tools.chain_to_json", icon='CONSTRAINT_DATA', text="Chain to JSON")
+        col.operator("ctc_tools.chain_to_json", icon='CONSTRAINT_DATA', text="Save Chain as Preset")
         col.operator("ctc_tools.apply_preset", icon='CONSTRAINT_DATA', text="Apply Preset")
         col.operator("ctc_tools.armature_to_ctc", icon='CONSTRAINT_DATA', text="Armature to CTC")
         col.operator("ctc_tools.orient_to_active", icon='CONSTRAINT_DATA', text="Point Nodes to Active")

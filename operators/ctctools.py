@@ -10,14 +10,17 @@ import selection_utils
 
 selection_utils.selected #selection in order
 """
+
 import bpy
 from mathutils import Vector, Matrix
 from bpy.props import IntProperty, StringProperty, BoolProperty, EnumProperty, FloatProperty, PointerProperty
+from bpy_extras.io_utils import ExportHelper
 from ..operators.ccltools import findFunction,checkSubStarType,checkStarType,checkIsStarType
 from ..structures.Ctc import ARecord,BRecord,Header
 import os
 import json
 import copy
+from pathlib import Path
 accessScale = lambda scaleVector: scaleVector[0]
 
     
@@ -87,31 +90,35 @@ class CTCPreset():
     def endNode(self):return self.allNodes[-1]
     def __iter__(self):
         return PresetLoop(self.bodyNodes())
-    
-currentPresetSize = 0
+
+def lastEdit(folder):
+    return max(os.path.getmtime(file) for file in Path(folder).rglob("*.ctcp"))    
+
+currentPresetTime = 0
 script_file = os.path.realpath(__file__)
 directory =  os.path.dirname(os.path.dirname(script_file))
-presetFile = directory+"\\"+"CTCPresets.json"
+presetFolder = directory+"\\"+"CTCPresets"
 def initializePresets():
-    global currentPresetSize
+    global currentPresetTime
     presets = []
-    if os.path.exists(presetFile):
-        file = open(presetFile,"r")
-        presets = [CTCPreset(preset) for preset in json.load(file)["presets"]]
+    if os.path.exists(presetFolder):
+        for presetFile in Path(presetFolder).rglob("*.ctcp"):
+            file = open(presetFile,"r")
+            presets.append(CTCPreset(json.load(file)))
         presets = {p.name():p for p in sorted(presets,key=lambda x: x.name())}
-        currentPresetSize = os.stat(presetFile).st_size
+        currentPresetTime = lastEdit(presetFolder)
     return presets
     
 preset = initializePresets()
 def getPresets(ctx,obj,*args,**kwargs):
-    if os.path.exists(presetFile):
-        global currentPresetSize 
-        size = os.stat(presetFile).st_size
-        if currentPresetSize != size:
+    if os.path.exists(presetFolder):
+        global currentPresetTime 
+        time = lastEdit(presetFolder)
+        if currentPresetTime != time:
             global preset
             preset = initializePresets()
-            currentPresetSize = size
-    return [p.enumDisplay() for p in preset.values()]
+            currentPresetTime = time
+    return [p.enumDisplay() for p in sorted(preset.values(),key = lambda x: x.name())]
     #print (preset)
 
 def findPreset(presetString):
@@ -803,12 +810,34 @@ checkIsArmatureRoot = checkStarType("MOD3_SkeletonRoot")
 def pollValidEmpty(self,obj):
     return checkIsArmatureRoot(obj)
 
-class toJSon(bpy.types.Operator):
+class toJSon(bpy.types.Operator,ExportHelper):
     bl_idname = 'ctc_tools.chain_to_json'
-    bl_label = 'DevTool: Print chain to console as json.'
-    bl_description = 'DevTool: Converts currently selected chain into a json.'
+    bl_label = 'Save Preset.'
+    bl_description = 'Converts currently selected chain into a preset.'
     bl_options = {"REGISTER", "UNDO"}
+
+    # ImportHelper mixin class uses this
+    filename_ext = ".ctcp"
+    filter_glob = StringProperty(default="*.ctcp", options={'HIDDEN'}, maxlen=255)
     
+    name = StringProperty(
+            name = "Name",
+            description = "Write a name for the preset",
+            default = "Misc: CTCPreset (X)"
+            )
+
+    description = StringProperty(
+            name = "Description",
+            description = "Write a tooltip description for the preset",
+            default = "A CTC Preset"
+            )    
+    
+    filepath = bpy.props.StringProperty(
+        name="File Path", 
+        description="File path used for exporting the ctcp file", 
+        maxlen= 4096,
+        default= presetFolder+"\\UserPreset"
+        )
     #name = StringProperty(
     #                    name = 'Chain Name',
     #                    description = 'Name for the Chain.',
@@ -842,8 +871,10 @@ class toJSon(bpy.types.Operator):
         cheader = self.jsonHeader(chain)
         nodes = self.parseNode(getChild(chain))
         functionParent = self.getFunction(chain)
-        result = {"name":chain.name,"parent":functionParent,"file_header":header,"chain_header":cheader,"nodes":nodes}
-        print(json.dumps(result, indent=1,default=lambda o: '<not serializable>'))
+        result = {"name":self.name,"description":self.description,"parent":functionParent,"file_header":header,"chain_header":cheader,"nodes":nodes}
+        outf = open(self.filepath,"w")
+        json.dump(result, outf,default = lambda o: '<not serializable>')
+        #print(json.dumps(result, indent=1,default=lambda o: '<not serializable>'))
         return {"FINISHED"}
     
     @classmethod
@@ -1042,12 +1073,14 @@ class convertArmature(bpy.types.Operator):
         bpy.ops.object.mode_set(mode="EDIT")
         strands = self.getChainPositions(chain)
         bpy.ops.object.mode_set(mode="OBJECT")
+        nodes = []
         for positions,transforms,names in strands:
             emptyNodes,newStart,nameMapping = self.emptyChain(positions,startIndex,validator,names)
             self.renameMeshes(chain,nameMapping)
             chainStart = createChain(*preset.chain_definition.items())
             self.createNodes(emptyNodes,chainStart,preset,transforms)
-        return emptyNodes[0],newStart
+            nodes.append(emptyNodes[0])
+        return nodes[0],newStart
         
     def growArmature(self,base,extensions,func):
         rootbone = self.fetchRoot(base,func)
@@ -1085,7 +1118,7 @@ class convertArmature(bpy.types.Operator):
         invalidValues = self.invalidFunctions(armature)
         hairRoots = []
         for chain in self.fetchChains():
-            root,startPoint = self.convertChain(chain,startPoint,invalidValues,findPreset(self.preset))
-            hairRoots.append(root)
+            roots,startPoint = self.convertChain(chain,startPoint,invalidValues,findPreset(self.preset))
+            hairRoots+=roots
         self.growArmature(armature,hairRoots,findPreset(self.preset).rootID())
         return {"FINISHED"}

@@ -1,0 +1,58 @@
+{
+ "name": "Misc: 1-Axis Rotation (2)",
+ "description": "Settings for 1-Axis Rotation (Requires Frame Setup)",
+ "parent": 0,
+ "file_header": {
+  "Update Frequency (frames)": 0.016666000708937645,
+  "Pose Snapping": 1.0,
+  "Dampening": 0.5,
+  "Reaction Speed": 1.0,
+  "Gravity Multiplier": 1.0,
+  "Medium Wind Effect": 0.800000011920929,
+  "Low Wind Effect": 0.5,
+  "Strong Wind Effect": 1.5,
+  "Type": "CTC"
+ },
+ "chain_header": {
+  "Type": "CTC_Chain",
+  "Chain Length": 2,
+  "CCL Collision": 0,
+  "Weightiness": 39,
+  "X-Axis Gravity": 0.0,
+  "Y-Axis Gravity": -980.0,
+  "Z-Axis Gravity": 0.0,
+  "Snapping": 0.15000000596046448,
+  "Cone of Motion": 0.5,
+  "Tension": 0.07999999821186066,
+  "Wind Multiplier": -1.0,
+  "Level of Detail": -1
+ },
+ "nodes": [
+  {
+   "Type": "CTC_*_Frame",
+   "Fixed End": 1,
+   "unknownByteSetTwo000": 0,
+   "unknownByteSetTwo001": 2,
+   "unknownByteSetTwo002": 0,
+   "unknownByteSetTwo003": 1,
+   "unknownByteSetTwo004": 1,
+   "unknown50": 0,
+   "unknownFloatSet000": 3.122741937637329,
+   "unknownFloatSet001": 1.0,
+   "unknownFloatSet002": 1.0
+  },
+  {
+   "Type": "CTC_*_Frame",
+   "Fixed End": 0,
+   "unknownByteSetTwo000": 0,
+   "unknownByteSetTwo001": 1,
+   "unknownByteSetTwo002": 0,
+   "unknownByteSetTwo003": 1,
+   "unknownByteSetTwo004": 1,
+   "unknown50": 0,
+   "unknownFloatSet000": 0.785398006439209,
+   "unknownFloatSet001": 1.0,
+   "unknownFloatSet002": 1.0
+  }
+ ]
+}
