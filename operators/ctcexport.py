@@ -11,7 +11,7 @@ from bpy.props import StringProperty, BoolProperty, EnumProperty, FloatProperty
 from bpy.types import Operator
 from mathutils import Vector, Matrix
 from ..structures.Ctc import Ctc,Header,ARecord,BRecord
-from ..operators.ccltools import getCol
+from ..operators.ccltools import getCol,checkIsRoot
 from ..operators.ctctools import checkIsChain, checkIsNode, checkIsChainStart, checkIsCTC, getStarFrame, accessScale
 
 def isArray(propType):
@@ -126,7 +126,11 @@ class ExportCTC(Operator, ExportHelper):
             #brecord["unknownFloatSet"] = [currentNode["UnknownFloat%02d"%i] for i in range(2)]
             #brecord["unknownByteSetTwo"] = [currentNode["UnknownByte%02d"%i] for i in range(5)]
             #brecord["isChainParent"] = checkIsChain(parent)
-            try: boneFunction = currentNode.constraints["Bone Function"].target["boneFunction"]
+            try: 
+                target = boneFunction = currentNode.constraints["Bone Function"].target
+                if "boneFunction" in target: boneFunction = target["boneFunction"]
+                elif checkIsRoot(target): boneFunction = -1
+                else: raise
             except:
                 self.errors.append("Missing Bone Function on Node %s"%currentNode.name)
                 if self.missingFunctionBehaviour == "Abort": raise ValueError()

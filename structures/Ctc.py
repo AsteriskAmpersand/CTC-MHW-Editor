@@ -299,13 +299,18 @@ if __name__ == "__main__":
         except:
             return obj
     functions = set()
-    for ctcf in Path(r"E:\MHW\ChunkG0\pl\hair").rglob("*.ctc"):
+    for ctcf in Path(r"E:\MHW\ChunkG0").rglob("*.ctc"):
         ctc = CtcFile(ctcf).data
         for chain in ctc:
-            c = chain.chain 
-            for node in chain:
-                functions.add(node.boneFunctionID)
-    print(functions)
+            if len(chain):
+                c = chain.chain 
+                chainItems = iter(chain)
+                first = next(chainItems)
+                for node in chainItems:
+                    if node.fixedEnd:
+                        print(ctcf)
+                #functions.add(node.boneFunctionID)
+    #print(functions)
     """
             ctc = CtcFile(ctcf).data
             for c in checks:

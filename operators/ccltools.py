@@ -22,13 +22,15 @@ def checkSubStarType(typing):
     return lambda x: checkIsStarType(x) and typing in x["Type"]
 
 checkIsSubCCL = checkSubStarType("CCL")
-
+checkIsRoot = checkStarType("MOD3_SkeletonRoot")
 def getCol(matrix, column):
     return [matrix[i][column] for i in range(len(matrix))]
 
 def findFunction(functionID):
-    match = [obj for obj in bpy.context.scene.objects if obj.type == "EMPTY" 
-             and "boneFunction" in obj and obj["boneFunction"] == functionID]
+    match = [obj for obj in bpy.context.scene.objects if obj.type == "EMPTY" and
+             (("boneFunction" in obj and obj["boneFunction"] == functionID) or
+             functionID == -1 and checkIsRoot(obj))
+             ]
     if len(match) != 1:
         raise ValueError(("Multiple" if len(match) else "No" )+" Function ID Matches for %d"%functionID)
     return match[0]
