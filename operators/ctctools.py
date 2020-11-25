@@ -96,7 +96,8 @@ def lastEdit(folder):
 
 currentPresetTime = 0
 script_file = os.path.realpath(__file__)
-directory =  os.path.dirname(os.path.dirname(script_file))
+# directory = os.path.dirname(os.path.dirname(script_file))
+directory = os.path.dirname(script_file)
 presetFolder = directory+"\\"+"CTCPresets"
 def initializePresets():
     global currentPresetTime
