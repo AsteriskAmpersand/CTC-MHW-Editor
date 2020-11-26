@@ -104,7 +104,7 @@ def initializePresets():
     presets = []
     if os.path.exists(presetFolder):
         for presetFile in Path(presetFolder).rglob("*.ctcp"):
-            file = open(presetFile,"r")
+            file = open(str(presetFile),"r")
             presets.append(CTCPreset(json.load(file)))
         presets = {p.name():p for p in sorted(presets,key=lambda x: x.name())}
         currentPresetTime = lastEdit(presetFolder)
