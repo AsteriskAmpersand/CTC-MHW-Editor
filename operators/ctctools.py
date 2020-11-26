@@ -92,7 +92,7 @@ class CTCPreset():
         return PresetLoop(self.bodyNodes())
 
 def lastEdit(folder):
-    return max(os.path.getmtime(file) for file in Path(folder).rglob("*.ctcp"))    
+    return max(os.path.getmtime(str(file)) for file in Path(folder).rglob("*.ctcp"))    
 
 currentPresetTime = 0
 script_file = os.path.realpath(__file__)
