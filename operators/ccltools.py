@@ -96,7 +96,8 @@ def capsuleData(capsule):
         co.append(Vector(getCol(node.matrix_basis,3)[0:3]))
         r.append(node.empty_draw_size)
         i.append(node.constraints["Bone Function"].target)
-    return co[0],r[0],i[0],co[1],r[1],i[1]
+    data = capsule["data"]
+    return co[0],r[0],i[0],co[1],r[1],i[1],data
 
 def joinObjects(obs):
     scene = bpy.context.scene
@@ -112,7 +113,7 @@ def joinObjects(obs):
     return obs[0]
 
 def renderCapsules(capsule):
-    co1, r1, boneOne, co2, r2, boneTwo = capsuleData(capsule)
+    co1, r1, boneOne, co2, r2, boneTwo, _ = capsuleData(capsule)
     m1 = createMesh(co1, r1, boneOne)
     m2 = createMesh(co2, r2, boneTwo)
     m = joinObjects([m1,m2])
@@ -140,7 +141,7 @@ def joinEmpties(obs):
         ob.parent = o
     return o
         
-def createCapsule(f1,f2,r1,r2,co1=Vector([0,0,0]),co2=Vector([0,0,0])):
+def createCapsule(f1,f2,r1,r2,co1=Vector([0,0,0]),co2=Vector([0,0,0]),data = [0]*8+[0]*4):
     s1 = createGeometry(co1, r1, f1)
     s1.name = "Start Sphere"
     s1["Type"] = "CCL_SPHERE"
@@ -153,14 +154,14 @@ def createCapsule(f1,f2,r1,r2,co1=Vector([0,0,0]),co2=Vector([0,0,0])):
     #hull = self.convexHull(s)
     s.name = "Collision Capsule"
     s["Type"] = "CCL"
-    s["Data"] = [0]*8+[0]*4
+    s["Data"] = data
     return s
 
 def duplicateCapsule(capsule,xmirror=False,ymirror=False,zmirror=False):
-    co1,r1,i1,co2,r2,i2 = capsuleData(capsule)
+    co1,r1,i1,co2,r2,i2,data = capsuleData(capsule)
     mirror = lambda x: x.reflect(Vector([xmirror,ymirror,zmirror]))
     co1, co2 = mirror(co1),mirror(co2)
-    capsule2 = createCapsule(i1,i2,r1,r2,co1,co2,)
+    capsule2 = createCapsule(i1,i2,r1,r2,co1,co2,data)
     capsule2["Data"] = capsule["Data"]
 
 class CCLTools(bpy.types.Panel):

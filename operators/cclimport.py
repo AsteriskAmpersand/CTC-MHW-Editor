@@ -81,10 +81,12 @@ class ImportCCL(Operator, ImportHelper):
                 capsule = self.recordToCapsule(entry)
                 capsule.name = "%d Capsule"%ix  
                 capsules.append(capsule)
-            except:
+            except Exception as e:                
                 if self.missingFunctionBehaviour == "Omit":
+                    self.ErrorMessages.append("Warning %s"%e)
                     pass
                 elif self.missingFunctionBehaviour == "Abort":
+                    self.ErrorMessages.append("Error %s"%e)
                     for capsule in capsules: self.cleanup(capsule)
                     break
         self.displayErrors(self.ErrorMessages)
@@ -107,7 +109,7 @@ class ImportCCL(Operator, ImportHelper):
             self.ErrorMessages.append("CCL Points to Bone Function %d but missing from the Skeleton."%record.boneIDTwo)
             if self.missingFunctionBehaviour == "Null": f1=None 
             else: raise ValueError()
-        return createCapsule(f1,f2,r1,r2,co1,co2)
+        return createCapsule(f1,f2,r1,r2,co1,co2,record.unknownFrontBytesCont+record.unknownEndBytes)
     
     
 def menu_func_import(self, context):

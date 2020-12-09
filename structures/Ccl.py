@@ -88,6 +88,9 @@ import numpy as np
 from pathlib import Path
 for path in Path(r"E:\MHW\Merged").rglob("*.ccl"):
     ccl = CclFile(path).data
+    print(path)
     for record in ccl:
-        print (str(record.unknownFrontBytesCont)+"-"+str(record.unknownEndBytes))
+        print ("%d -> %d: "%(record.boneIDOne,record.boneIDTwo)+
+               str(list(map(lambda x: hex(x)[2:],record.unknownFrontBytesCont)))+
+               "-"+str(list(map(lambda x: hex(x)[2:],record.unknownEndBytes))))
 """
