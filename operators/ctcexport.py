@@ -113,12 +113,15 @@ class ExportCTC(Operator, ExportHelper):
             return []
         else:
             if len(current)>1:
+                self.errors.append("Forked chain not under specification %s"%parent.name)
                 raise ValueError("Forked chain not under specification %s"%parent.name)
             currentNode = current[0]
             if not checkIsNode(currentNode):
+                self.errors.append("Forked chain not under specification %s"%parent.name)
                 raise ValueError("Non-node object on chain %s"%currentNode.name)
             star = getStarFrame(currentNode)
             if star is None:
+                self.errors.append("Node %s is missing it's corresponding * Frame"%currentNode.name)
                 raise ValueError("Node %s is missing it's corresponding * Frame"%currentNode.name)
             brecord = blendToObj(star,BRecord)
             brecord["Matrix"] = star.matrix_local.normalized()
@@ -145,16 +148,19 @@ class ExportCTC(Operator, ExportHelper):
         try:
             bpy.ops.object.mode_set(mode='OBJECT')
         except:
+            #raise
             pass
         bpy.ops.object.select_all(action='DESELECT')
         try: header,file = self.getFile()
         except ValueError: 
             self.displayErrors(self.errors)
+            #raise
             return {'CANCELLED'}
         arecords,chains = self.getChains(file)
         try: brecords = sum([self.chainToNodes(chain) for chain in chains],[])
         except ValueError: 
             self.displayErrors(self.errors)
+            #raise
             return {'CANCELLED'}
         binfile = Ctc().construct(header,arecords,brecords).serialize()
         with open(self.properties.filepath,"wb") as output:

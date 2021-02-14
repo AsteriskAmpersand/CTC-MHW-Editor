@@ -26,34 +26,77 @@ class Header(PyCStruct):
 	("numARecords","int"),
 	("numBRecords","int"),
 	("unknownConstantInt","int"),
-	("updateTicks","float"),
-	("poseSnapping","float"),
-	("chainDamping","float"),
-	("reactionSpeed","float"),
-	("gravityMult","float"),
-	("windMultMid","float"),
-	("windMultLow","float"),
-	("windMultHigh","float"),
-	("unknownFloatSet","float[3]"),
+    
+	("stepTime","float"),
+	("springScaling","float"),
+	("globalDamping","float"),
+	("globalTransmissiveForceCoefficient","float"),
+	("gravityScaling","float"),
+	
+    ("mWindScale","float"),#Might be reversed in here and start with mReflectScaling
+    ("mWindScaleMin","float"),
+    ("mWindScaleMax","float"),
+    ("mReflectScaling","float"),
+    
+	("unknownFloatSet","float[2]"),
 	("fixedBytes","byte[6]"),#(1,1,1,1,1,1)
     ("cursedBytes","byte[2]"),#0 0 #1 0
     ])
     hide = ["filetype","numARecords","numBRecords","fixedBytes"]
-    defaultProperties = {"filetype":"CTC\x00",
-               "fixedBytes":(1,1,1,1,1,1),
-                "unknownsConstantIntSet":(28,0,1000),
-                "unknownConstantInt":64,
-                "unknownFloatSet":(0.3,0.5,0.2),
-                "cursedBytes":(0,0),         
+    defaultProperties = {
+             "filetype":"CTC\x00",
+             "fixedBytes":(1,1,1,1,1,1),
+             "unknownsConstantIntSet":(28,0,1000),
+             "unknownConstantInt":64,
+             "mReflectScaling":0.3,
+             "unknownFloatSet":(0.5,0.2),
+             "cursedBytes":(0,0),         
             }
     
     def construct(self,data):
         #data["filetype"]="CTC\x00"
         #data["fixedBytes"]=[1,1,1,1,1,1]
+        for name,prop in data.items():
+            if name in self.remapScheme:
+                data[self.reverseRemapScheme[name]] = prop
+            if name == "unknownFloatSet" and len(prop) == 3:
+                data["mReflectScaling"] = prop[0]
+                data["unknownFloatSet"] = prop[1:]
         super().construct(data)
         return self
     
     renameScheme = {
+            "stepTime":"Update Frequency (frames)",
+            "gravityScaling":"Gravity Scaling",
+            "springScaling": "Spring Scaling",
+            "globalTransmissiveForceCoefficient":"Global Transmissive Force Coefficient",
+            "globalDamping":"Dampening",
+            "mWindScaleMin":"Wind Minimum",
+            "mWindScale":"Wind Scaling",
+            "mWindScaleMax":"Wind Maximum",
+            "unknownsConstantIntSet":"{Unknown Int Set 1}:",
+            "unknownConstantInt":"{Unknown Int Set 2}:",
+            "unknownFloatSet":"{Unknown Float Set 1}:",
+            "mReflectScaling":"Reflect Scaling",
+            "fixedBytes":"{Cursed Fixed Bytes}:",
+            "cursedBytes":"{Cursed Non Fixed Bytes}:",
+            "numARecords":"{A Record Count}:",
+            "numBRecords":"{B Record Count}:",
+            "filetype":"{Filetype}:",            
+            }
+    reverseScheme = {value:key for key, value in renameScheme.items()}
+    remapScheme = {
+            "updateTicks":"stepTime",
+            "poseSnapping":"springScaling",
+            "chainDamping":"globalDamping",
+            "reactionSpeed":"globalTransmissiveForceCoefficient",
+            "gravityMult":"gravityScaling",
+            "windMultMid":"mWindScale",
+            "windMultLow":"mWindScaleMin",
+            "windMultHigh":"mWindScaleMax",
+                    }
+    reverseRemapScheme = {value:key for key, value in remapScheme.items()}
+    oldBlenderRemap = {
             "updateTicks":"Update Frequency (frames)",
             "gravityMult":"Gravity Multiplier",
             "poseSnapping": "Pose Snapping",
@@ -62,16 +105,8 @@ class Header(PyCStruct):
             "windMultLow":"Low Wind Effect",
             "windMultMid":"Medium Wind Effect",
             "windMultHigh":"Strong Wind Effect",
-            "unknownsConstantIntSet":"{Unknown Int Set 1}:",
-            "unknownConstantInt":"{Unknown Int Set 2}:",
-            "unknownFloatSet":"{Unknown Float Set 1}:",
-            "fixedBytes":"{Cursed Fixed Bytes}:",
-            "cursedBytes":"{Cursed Non Fixed Bytes}:",
-            "numARecords":"{A Record Count}:",
-            "numBRecords":"{B Record Count}:",
-            "filetype":"{Filetype}:",            
-            }
-    reverseScheme = {value:key for key, value in renameScheme.items()}
+                    }
+    reverseBlenderRemap = {value:key for key, value in oldBlenderRemap.items()}
 #} header 
 
 class ARecord(PyCStruct):

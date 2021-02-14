@@ -133,6 +133,10 @@ def createCTCHeader(*args):
     header.empty_draw_type = "SPHERE"
     header.show_x_ray = True
     for name,prop in args:
+        if name in Header.reverseBlenderRemap:
+            name = Header.reverseBlenderRemap[name] if name in Header.reverseBlenderRemap else name
+            name = name if name not in Header.remapScheme else Header.remapScheme[name]
+            name = name if name not in Header.renameScheme else Header.renameScheme[name]
         writeProp(header,name,prop)
     header["Type"] = "CTC"
     return header
