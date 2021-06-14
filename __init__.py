@@ -27,7 +27,7 @@ from .operators.ccltools import CopyCCLData, PasteCCLData, CCLTools, hideCCL, sh
 from .operators.ctctools import (findDuplicates, realignChain, #changeNodeTarget,
                                  reendChain, restartChain, extendChain,
                                  createCTC, chainFromSelection,nodeFromActive,
-                                 orientToActive,orientToActiveProjection,
+                                 orientToActive,orientToActiveProjection,planarOrientation,
                                  ctcAnon, ctcDeanon, ctcClear, ctcOrphan,
                                  hideCTC, showCTC,toJSon,applyPreset,convertArmature)
 from .operators.ctctoolspanel import CTCTools
@@ -53,7 +53,7 @@ classes = [Selection,
            findDuplicates, realignChain, #changeNodeTarget,
            reendChain, restartChain, extendChain,
            createCTC, chainFromSelection, nodeFromActive,
-           orientToActive,orientToActiveProjection,
+           orientToActive,orientToActiveProjection,planarOrientation,
            ctcAnon, ctcDeanon, ctcClear, ctcOrphan,
            hideCTC, showCTC,toJSon,
            get_all_matrices,set_all_matrices,

@@ -88,6 +88,7 @@ class CTCTools(bpy.types.Panel):
         col.operator("ctc_tools.armature_to_ctc", icon='CONSTRAINT_DATA', text="Armature to CTC")
         col.operator("ctc_tools.orient_to_active", icon='CONSTRAINT_DATA', text="Point Nodes to Active")
         col.operator("ctc_tools.orient_projection", icon='CONSTRAINT_DATA', text="Point Nodes to Active Projection")
+        col.operator("ctc_tools.planar_orientation", icon='CONSTRAINT_DATA', text="Orient Frames Relative to Plane Normal")
         #col.operator("ctc_tools.extend_chain", icon='CONSTRAINT_DATA', text="Extend Chain")
         ##col.operator("ctc_tools.change_target", icon='CONSTRAINT_DATA', text="Change Target")
         col.operator("ctc_tools.restart_chain", icon='CONSTRAINT_DATA', text="Restart Chain")

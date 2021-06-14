@@ -13,7 +13,7 @@ selection_utils.selected #selection in order
 
 import bpy
 from mathutils import Vector, Matrix
-from bpy.props import IntProperty, StringProperty, BoolProperty, EnumProperty, FloatProperty, PointerProperty
+from bpy.props import IntProperty, StringProperty, BoolProperty, EnumProperty, FloatProperty, PointerProperty, FloatVectorProperty
 from bpy_extras.io_utils import ExportHelper
 from ..operators.ccltools import findFunction,checkSubStarType,checkStarType,checkIsStarType
 from ..structures.Ctc import ARecord,BRecord,Header
@@ -21,6 +21,7 @@ import os
 import json
 import copy
 from pathlib import Path
+import numpy as np
 accessScale = lambda scaleVector: scaleVector[0]
 
     
@@ -232,7 +233,7 @@ def getChainEnd(active):
     child = getChild(active)
     if not child:
         if checkIsChain(active):
-            raise ValueError("Chain has no nodactivees")
+            raise ValueError("Passed non chain element %s"%active.name)
         return active
     else:
         return getChainEnd(child)
@@ -291,7 +292,7 @@ class chainFromSelection(bpy.types.Operator):
     
     @classmethod
     def poll(cls,context):
-        selection = bpy.selection
+        selection = bpy.context.selected_objects
         for bone in selection:
             if not checkIsBone(bone):
                 return False
@@ -387,6 +388,32 @@ def getStarFrame(currentNode):
         if checkIsStarFrame(c):
             return c
     else: return None
+
+def getFrameNode(currentFrame):
+    if not checkIsStarFrame(currentFrame):
+        raise ValueError("Non-Frame %s passed to Frame Parent function"%currentFrame)
+    if not checkIsNode(currentFrame.parent):
+        raise ValueError("Frame %s parent is not CTC Node"%currentFrame.name)
+    else: return currentFrame.parent
+    
+def getNodeBone(node):
+    if "Bone Function" not in node.constraints:
+        raise ValueError("Node %s does not have a parent bone"%node.name)
+    if not node.constraints["Bone Function"]:
+        raise ValueError("Node %s does not have a parent bone"%node.name)
+    return node.constraints["Bone Function"].target
+    
+def getFrameBone(currentFrame):
+    node = getFrameNode(currentFrame)
+    bone = getNodeBone(node)
+    return bone
+
+def getNextBone(currentFrame):
+    node = getFrameNode(currentFrame)    
+    child = getChild(node)
+    if child is None:
+        return None
+    return getNodeBone(child)
 
 def orientVectorPair(v0,v1):
     v0 = v0.normalized()
@@ -499,7 +526,145 @@ class orientToActiveProjection(bpy.types.Operator):
         for obj in [obj for obj in bpy.context.selected_objects if obj != active]:
             self.orientVectorSystem(obj,active,frozenIndex,freeIndex)
         return {"FINISHED"}
+
+get_location = lambda f: Vector([f.matrix_world[i][3] for i in range(3) ])
+def sign_corrected(vec):
+    signum = int((vec[0]>=0)*2-1)
+    return signum*vec
+    
+class planarOrientation(bpy.types.Operator):    
+    bl_idname = 'ctc_tools.planar_orientation'
+    bl_label = 'Orient Free Vector'
+    bl_description = "Orient the frame's free vector to a plane normal."
+    bl_options = {"REGISTER", "UNDO"}
+
+    only = BoolProperty(
+                        name = 'Limit to Selection',
+                        description = 'Only orient selection.',
+                        default = True,
+                        )    
+    normal = FloatVectorProperty(
+                        name = "Plane Normal",
+                        description = "Normal of Plane used for alignment",
+                        default = [1,0,0],
+                        size = 3
+                        )
+    mode = EnumProperty(
+                        name = "Orientation Mode",
+                        description = "Orient to fixed vector or implicit plane normal",
+                        items = [
+                                ('fixed',"Fixed Vector","",0),
+                                ('chain',"Chain-wide Plane","",1),
+                                ('node',"Per Node's Plane","",2),
+                                 ],
+                        default = 'fixed'
+                        )
+    eps = 0.01
+    
+    def get_selection(self):
+        return [m for m in bpy.context.scene.objects 
+                     if (not self.only or m in bpy.context.selected_objects)
+                     and checkIsStarFrame(m)]
+    
+    def get_triplet(self,frame):
+        v1 = getFrameBone(frame)
+        v0 = v1.parent
+        v2 = getNextBone(frame)
+        
+        return v0,v1,v2
+    
+    def perpendicular_correction(self,v0,candidate):        
+        perpendicular = v0.cross(candidate)
+        if perpendicular.length < self.eps:
+            candidate = Vector((1,0,0))
+            if v0.cross(candidate).length < self.eps:
+                candidate = Vector((0,0,1))
+        return candidate
+    
+    def generate_matrix(self,v0,n1):       
+        #forward = (v2-v1).normalized()
+        #backward = (v0-v1).normalized()
+        candidate = n1
+        proj = (candidate - (candidate.dot(v0))*v0).normalized()
+        #proj = - proj * ((proj[0]>=0)*2-1)
+        v2 = v0.cross(proj)
+        #print(v0,proj,v2)
+        return Matrix([v0,proj,v2]).transposed().to_4x4()
+    
+    def planar_regression(self,point_set):
+        """
+        sx2 = sum((p[0]**2 for p in point_set))
+        sy2 = sum((p[1]**2 for p in point_set))
+        sxy = sum((p[0]*p[1] for p in point_set))
+        sxz = sum((p[0]*p[2] for p in point_set))
+        syz = sum((p[1]*p[2] for p in point_set))
+        sx = sum((p[0] for p in point_set))
+        sy = sum((p[1]*p[1] for p in point_set))
+        sz = sum((p[2]*p[1] for p in point_set))
+        s1 = sum((1 for p in point_set))
+        A = [[sx2,sxy,sx], [sxy,sy2,sy], [sx,sy,s1]]
+        b = [sxz,syz,sz]
+        x = np.linalg.solve(A, b)
+        #x = [A,B,C] where  z = Ax + By + C -> C = Ax + By + 1z -> n = (A,B,1)
+        A,B,_ = x
+        print(A)
+        print(B)
+        signum = int((A>=0)*2-1)
+        return signum*Vector((A,B,1))
+        """
+        start = point_set[0]
+        end = point_set[-1]
+        bundle = sum([sign_corrected((boneco-start).cross(end-boneco)) for boneco in point_set[1:-1] ],Vector((0,0,0)))/(len(point_set)-2)
+        return bundle
+        
+    def get_tuple(self,frame):
+        b0,b1,b2 = self.get_triplet(frame)
+        if b0 is None or b1 is None or b2 is None:
+            return None,None          
+        v1 = get_location(b1)
+        v2 = get_location(b2)
+        forward = (v2-v1).normalized()
+                
+        if self.mode == "fixed":
+            perpendicular = Vector(self.normal).normalized()      
             
+        elif self.mode == "chain":         
+            node = frame.parent
+            chain = getUpperChain(getChainEnd(node))
+            connection = getNodeBone(chain[0]).parent
+            boneChain = [connection,*(getNodeBone(node) for node in chain)]
+            locations = [get_location(bone) for bone in boneChain]
+            perpendicular = self.planar_regression(locations)
+            
+        elif self.mode == "node":
+            v0 = get_location(b0)
+            backward = (v0-v1).normalized()
+            overwrite = False
+            while(forward.cross(backward).length < self.eps):
+                if b0.parent is None:
+                    perpendicular = self.perpendicular_correction(forward,backward)
+                    overwrite = True
+                b0 = b0.parent
+                v0 = get_location(b0)
+                backward = (v0-v1).normalized()
+            if not overwrite:
+                perpendicular = backward.cross(forward)
+                if perpendicular[0]<0: perpendicular *= -1 
+            
+            
+        perpendicular = self.perpendicular_correction(forward,perpendicular)
+        #Vector(self.normal).normalized()
+        return forward,perpendicular
+    
+    def execute(self,context):        
+        selection = self.get_selection()
+        for frame in selection:
+            forward,backward = self.get_tuple(frame)
+            if forward is None or backward is None: continue            
+            displacement = get_location(frame)
+            frame.matrix_world = self.generate_matrix(forward,backward)
+            for i in range(3): frame.matrix_world[i][3]=displacement[i]
+        return {"FINISHED"}
 
 def chainRematchValidate(active,selection):
     if len(selection) != 1:
@@ -1068,7 +1233,7 @@ class convertArmature(bpy.types.Operator):
     def renameMeshes(self,chain,remaps):
         for child in chain.children:
             if child.type == "MESH":
-                for g in child.vertex_groups:
+                for g in child.vertex_groups:                    
                     if g.name in remaps:
                         g.name = remaps[g.name]
     

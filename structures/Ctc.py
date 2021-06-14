@@ -62,6 +62,9 @@ class Header(PyCStruct):
             if name == "unknownFloatSet" and len(prop) == 3:
                 data["mReflectScaling"] = prop[0]
                 data["unknownFloatSet"] = prop[1:]
+        for name,prop in data.items():
+            if name in self.reverseScheme and self.reverseScheme[name] not in data:
+                data[self.reverseScheme[name]] = prop
         super().construct(data)
         return self
     
