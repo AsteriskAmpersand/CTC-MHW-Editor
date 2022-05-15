@@ -426,7 +426,8 @@ def orientVectorPair(v0,v1):
     if c == -1: return Matrix([[-1,0,0],[0,-1,0],[0,0,1]])
     vx = Matrix([[0,-v[2], v[1]],[v[2],0,-v[0]],[-v[1],v[0],0]])
     return Matrix.Identity(3)+vx+(1/(1+c))*vx*vx
-    
+
+
 class orientToActive(bpy.types.Operator):
     bl_idname = 'ctc_tools.orient_to_active'
     bl_label = 'Orient to Active'
@@ -468,12 +469,16 @@ class orientToActive(bpy.types.Operator):
             self.orientVectorSystem(obj,active,vec)
         #bpy.context.scene.update()
         return {"FINISHED"}
+    
+    def invoke(self, context, event):
+        wm = context.window_manager
+        return wm.invoke_props_dialog(self)
 
 class orientToActiveProjection(bpy.types.Operator):
     bl_idname = 'ctc_tools.orient_projection'
     bl_label = 'Orient to Active Projection'
     bl_description = 'Orient selection to active projection on the plane whose normal is the fixed vector.'
-    bl_options = {"REGISTER", "UNDO"}
+    bl_options = {"REGISTER"}
     
     axis = EnumProperty(
         name = "Fixed Vector - Orienting Vector",
@@ -488,6 +493,10 @@ class orientToActiveProjection(bpy.types.Operator):
                  ])),
         default = '("z","x")'
         )
+    
+    def invoke(self, context, event):
+        wm = context.window_manager
+        return wm.invoke_props_dialog(self)
         
     @classmethod
     def poll(cls,context):
@@ -536,7 +545,7 @@ class planarOrientation(bpy.types.Operator):
     bl_idname = 'ctc_tools.planar_orientation'
     bl_label = 'Orient Free Vector'
     bl_description = "Orient the frame's free vector to a plane normal."
-    bl_options = {"REGISTER", "UNDO"}
+    bl_options = {"REGISTER"}
 
     only = BoolProperty(
                         name = 'Limit to Selection',
@@ -1285,7 +1294,11 @@ class convertArmature(bpy.types.Operator):
             return [mesh for mesh in bpy.context.scene.objects if mesh.type == "ARMATURE" and mesh.select]
     
     def execute(self,context): 
+        if not self.emptyArmature:
+            raise KeyError("Cannot Find Empty Armature Root to attach CTC To (must have Custom Type 'Type' with value 'MOD3_SkeletonRoot')")
         armature = self.findArmature(self.emptyArmature)
+        if armature is None:
+            raise KeyError("Cannot Find Empty Armature Root to attach CTC To (must have Custom Field 'Type' with value 'MOD3_SkeletonRoot')")
         startPoint = self.startIndex
         invalidValues = self.invalidFunctions(armature)
         hairRoots = []

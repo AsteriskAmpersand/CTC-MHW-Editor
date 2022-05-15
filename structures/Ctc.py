@@ -313,14 +313,16 @@ def ifIn(key,val,dictList):
 
 if __name__ == "__main__":
     from pathlib import Path
-    checks = {field:set() for field in Header.fields.keys()}
-    acheck = {field:set() for field in ARecord.fields.keys()}
+    checks = {}#field:set() for field in Header.fields.keys()}
+    acheck = {#field:set() for field in ARecord.fields.keys()}
+              "collision":{},"weightiness":{}
             #unknownFloatTwo":set(),"unknownFloatThree":set(),"unknownFloatFour":set(),"zeroFloat":set(),
             #"unknownByteSet":set(),"unknownByteSetCont":set(),"fixedNegativeOne":set(),"oneZeroZeroZero1":set(),
-            #"oneZeroZeroZero2":set(),"coneLimit":set()}
-    bcheck = {"unknownFloatSet":set(),"unknown50":set(),
-              "m03":set(),"m13":set(),"m23":set(),"m33":set(),"unknownByteSetTwo":set(),
-              "zeroSet1":set(),"zeroSet3":set(),"oneFloat":set(),"unknownExtendedByteSet":set()}
+            #"oneZeroZeroZero2":set(),"coneLimit":set()
+            }
+    bcheck = {}#"unknownFloatSet":set(),"unknown50":set(),
+              #"m03":set(),"m13":set(),"m23":set(),"m33":set(),"unknownByteSetTwo":set(),
+              #"zeroSet1":set(),"zeroSet3":set(),"oneFloat":set(),"unknownExtendedByteSet":set()}
     exceptor = {}
     def norm(v):
         return np.sqrt(v[0]**2+v[1]**2+v[2]**2)
@@ -336,28 +338,22 @@ if __name__ == "__main__":
             return tuple(obj)
         except:
             return obj
+    def tryAdd(dic, key, file):
+        if key not in dic:
+            dic[key] = set()
+        dic[key].add(file)
     functions = set()
-    for ctcf in Path(r"E:\MHW\ChunkG0").rglob("*.ctc"):
-        ctc = CtcFile(ctcf).data
-        for chain in ctc:
-            if len(chain):
-                c = chain.chain 
-                chainItems = iter(chain)
-                first = next(chainItems)
-                for node in chainItems:
-                    if node.fixedEnd:
-                        print(ctcf)
-                #functions.add(node.boneFunctionID)
-    #print(functions)
-    """
+    for ctcf in Path(r"E:\MHW\Chunk").rglob("*.ctc"):
             ctc = CtcFile(ctcf).data
             for c in checks:
                 #ifIn(tryTuple(getattr(ctc.Header,c)),ctcf,checks[c])
-                checks[c].add(tryTuple(getattr(ctc.Header,c)))
+                #checks[c].add(tryTuple(getattr(ctc.Header,c)))
+                tryAdd(acheck[c],tryTuple(getattr(ctc.Header,c)),ctcf)
             for chain in ctc:
                 c = chain.chain
                 for a in acheck:
-                    acheck[a].add(tryTuple(getattr(c,a)))
+                    tryAdd(acheck[a],tryTuple(getattr(c,a)),ctcf)
+                    #acheck[a].add(tryTuple(getattr(c,a)))
                 #first = True
                 #parentingArray = []
                 #broken = False
@@ -372,25 +368,45 @@ if __name__ == "__main__":
                     #if node.unknownByteSetTwo == [0,2,0,1,1]:
                     #    print(ctcf)
                     for b in bcheck:
-                        bcheck[b].add(tryTuple(getattr(node,b)))
+                        tryAdd(acheck[b],tryTuple(getattr(node,b)),ctcf)
+                        #bcheck[b].add(tryTuple(getattr(node,b)))
                 #if broken:
                 #    exceptor[str(ctcf)] = parentingArray
         #for file in exceptor:
         #    print("%s: %s"%(file,exceptor[file]))
         #raise
-        for c in checks:
-            print()
-            print(c)
-            print(checks[c])
-        for c in acheck:
-            print()
-            print(c)
-            print(acheck[c])
-        for c in bcheck:
-            print()
-            print(c)
-            print(bcheck[c])
-    """
+    for c in checks:
+        print()
+        print(c)
+        for k in sorted(checks[c]):
+            print("%s: %d"%(k,len(checks[c][k])))
+        #print(checks[c].keys())
+    for c in acheck:
+        print()
+        print(c)
+        for k in sorted(acheck[c]):
+            print("%s: %d"%(k,len(acheck[c][k])))
+        #print(acheck[c].keys())
+    for c in bcheck:
+        print()
+        print(c)
+        for k in sorted(bcheck[c]):
+            print("%s: %d"%(k,len(bcheck[c][k])))
+        #print(bcheck[c].keys())
+        """
+        ctc = CtcFile(ctcf).data
+        for chain in ctc:
+            if len(chain):
+                c = chain.chain 
+                chainItems = iter(chain)
+                first = next(chainItems)
+                for node in chainItems:
+                    if node.fixedEnd:
+                        print(ctcf)
+                #functions.add(node.boneFunctionID)
+    #print(functions)
+        """
+    
     """
     uci = set()
     ui = set()
