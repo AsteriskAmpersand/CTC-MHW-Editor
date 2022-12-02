@@ -90,7 +90,7 @@ class Header(PyCStruct):
     reverseScheme = {value:key for key, value in renameScheme.items()}
     remapScheme = {
             "updateTicks":"stepTime",
-            "poseSnapping":"springScaling",
+            "poseDampening":"springScaling",
             "chainDamping":"globalDamping",
             "reactionSpeed":"globalTransmissiveForceCoefficient",
             "gravityMult":"gravityScaling",
@@ -102,7 +102,7 @@ class Header(PyCStruct):
     oldBlenderRemap = {
             "updateTicks":"Update Frequency (frames)",
             "gravityMult":"Gravity Multiplier",
-            "poseSnapping": "Pose Snapping",
+            "poseDampening": "Pose Dampening",
             "reactionSpeed":"Reaction Speed",
             "chainDamping":"Dampening",
             "windMultLow":"Low Wind Effect",
@@ -126,7 +126,7 @@ class ARecord(PyCStruct):
 	("yGravity","float"),
 	("zGravity","float"),
 	("zeroFloat","float"),#0
-	("snapping","float"),#[0,1]
+	("Dampening","float"),#[0,1]
 	("coneLimit","float"),#[0,1]
 	("tension","float"),#[0,1]
 	("unknownFloatTwo","float"),#100 Usually
@@ -150,7 +150,7 @@ class ARecord(PyCStruct):
                "yGravity":-980,
                "zGravity":0,               
                "zeroFloat":0,
-               "snapping":0.25,
+               "Dampening":0.25,
                "coneLimit":1,
                "tension":0.25,
                "unknownFloatTwo":100,
@@ -184,9 +184,9 @@ class ARecord(PyCStruct):
                 "oneZeroZeroZero1":"{Fixed Set 1}:",
                 "oneZeroZeroZero2":"{Fixed Set 2}:",
                 "unknownByteSetCont":"{Fixed Set 3}:",
-            	"snapping":"Snapping",
-            	"coneLimit":"Cone of Motion",
-            	"tension":"Tension",
+            	"Dampening":"Dampening",
+            	"coneLimit":"Reduce Self Rate",
+            	"tension":"Elasticity",
             	"windMultiplier":"Wind Multiplier",
             	"lod":"Level of Detail",
                 "zeroFloat":"{Zero Float}",

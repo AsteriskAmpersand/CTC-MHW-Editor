@@ -4,7 +4,7 @@
  "parent": 115,
  "file_header": {
   "Update Frequency (frames)": 0.016666000708937645,
-  "Pose Snapping": 1.0,
+  "Pose Dampening": 1.0,
   "Dampening": 0.0,
   "Reaction Speed": 1.0,
   "Gravity Multiplier": 1.0,
@@ -21,9 +21,9 @@
   "X-Axis Gravity": 0.0,
   "Y-Axis Gravity": -300.0,
   "Z-Axis Gravity": 0.0,
-  "Snapping": 0.10000000149011612,
-  "Cone of Motion": 0.30000001192092896,
-  "Tension": 0.014999999664723873,
+  "Dampening": 0.10000000149011612,
+  "Reduce Self Rate": 0.30000001192092896,
+  "Elasticity": 0.014999999664723873,
   "Wind Multiplier": 0.30000001192092896,
   "Level of Detail": -1
  },
