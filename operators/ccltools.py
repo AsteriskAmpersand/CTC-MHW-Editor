@@ -96,7 +96,7 @@ def capsuleData(capsule):
         co.append(Vector(getCol(node.matrix_basis,3)[0:3]))
         r.append(node.empty_draw_size)
         i.append(node.constraints["Bone Function"].target)
-    data = capsule["data"]
+    data = capsule["Data"]
     return co[0],r[0],i[0],co[1],r[1],i[1],data
 
 def joinObjects(obs):
